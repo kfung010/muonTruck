@@ -18,6 +18,9 @@ CreateNtuple::CreateNtuple() {
 	manager->CreateNtupleDColumn("hitPixelX");
 	manager->CreateNtupleDColumn("hitPixelY");
 	manager->CreateNtupleDColumn("hitPixelZ");
+	manager->CreateNtupleDColumn("hitMomentumX_truth");
+	manager->CreateNtupleDColumn("hitMomentumY_truth");
+	manager->CreateNtupleDColumn("hitMomentumZ_truth");
 	manager->FinishNtuple(1);
 
 }

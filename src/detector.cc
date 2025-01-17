@@ -20,13 +20,13 @@ G4bool RPCDetector::ProcessHits(G4Step *aStep, G4TouchableHistory *ROIhist) {
 	G4int eventNum = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
 
 	G4ThreeVector posMuon = preStepPoint->GetPosition();
-	G4ThreeVector momMuon = preStepPoint->GetMomentum();
+	G4ThreeVector momMuon = preStepPoint->GetMomentum() / GeV;
 	const G4VTouchable *touchable = aStep->GetPreStepPoint()->GetTouchable();
 	G4int copyNo = touchable->GetCopyNumber();
 	G4VPhysicalVolume *physVol = touchable->GetVolume();
 	G4ThreeVector posDetector = physVol->GetTranslation();
 	G4double hitTime = preStepPoint->GetGlobalTime();
-	G4double muonMomentum = momMuon.mag()/1000;
+	G4double muonMomentum = momMuon.mag();
 
 	//G4cout << "Muon hit time : " << hitTime << G4endl;
 	//G4cout << "Muon hit position : (" << posMuon[0] << " mm, " << posMuon[1]/1000 << " m, " << posMuon[2] << " mm)" << G4endl;
@@ -45,6 +45,9 @@ G4bool RPCDetector::ProcessHits(G4Step *aStep, G4TouchableHistory *ROIhist) {
 	manager->FillNtupleDColumn(1, 6, posDetector[0]);
 	manager->FillNtupleDColumn(1, 7, posDetector[1]);
 	manager->FillNtupleDColumn(1, 8, posDetector[2]);
+	manager->FillNtupleDColumn(1, 9, momMuon[0]);
+	manager->FillNtupleDColumn(1, 10, momMuon[1]);
+	manager->FillNtupleDColumn(1, 11, momMuon[2]);
 	manager->AddNtupleRow(1);
 
 	return true;

@@ -2,20 +2,28 @@
 
 RPCConstruction::RPCConstruction() {
 
+	fMessenger = new G4GenericMessenger(this, "/cargo/", "Cargo Construction");
+	fMessenger->DeclareProperty("cargoMaterial", cargoMaterial, "Material in cargo");  //lithium, aluminium, copper, lead, ammoniumNitrate
+
+	cargoMaterial = "ammoniumNitrate";
+
+	// Dimensions of the world
     xWorldFull = 50*m;
 	yWorldFull = 50*m;
 	zWorldFull = 50*m;
 
+	// Dimensions of the cargo
 	xTruckFull = 2.5*m;
 	yTruckFull = 3*m;
 	zTruckFull = 10*m;
 	wheelRadius = 0.5*m;
 
+	// Size of one pixel, and the numbers of pixel along the x and z directions
 	xPixelFull = 6*cm;
 	yPixelFull = 1*cm;
 	zPixelFull = 12*cm; 
-	numX = 155;   
-	numZ = 155;  
+	numX = 155; //405;   
+	numZ = 155; //405;  
 
 	// heights of RPC plates from top/bottom of truck 
 	//height = {-3*m, 3*m};  
@@ -36,6 +44,10 @@ void RPCConstruction::DefineMaterials() {
 	ammoniumNitrate->AddElement(nist->FindOrBuildElement("H"), 4);
 	ammoniumNitrate->AddElement(nist->FindOrBuildElement("O"), 3);
 
+	lithium = nist->FindOrBuildMaterial("G4_Li");
+	aluminium = nist->FindOrBuildMaterial("G4_Al");
+    copper = nist->FindOrBuildMaterial("G4_Cu");
+    lead = nist->FindOrBuildMaterial("G4_Pb");
 }
 
 G4VPhysicalVolume *RPCConstruction::Construct() {
@@ -46,8 +58,15 @@ G4VPhysicalVolume *RPCConstruction::Construct() {
 	physWorld = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicWorld, "physWorld", 0, false, 0, true);  
 
 	// Create truck
+	if (cargoMaterial == "lithium") cargoMat = lithium;
+	else if (cargoMaterial == "aluminium") cargoMat = aluminium;
+	else if (cargoMaterial == "copper") cargoMat = copper;
+	else if (cargoMaterial == "lead") cargoMat = lead;
+	else if (cargoMaterial == "ammoniumNitrate") cargoMat = ammoniumNitrate;
+	else throw std::runtime_error("Invalid cargo material. Program ended with an error.");
+
 	solidTruck = new G4Box("solidTruck", xTruckFull/2, yTruckFull/2, zTruckFull/2);
-	logicTruck = new G4LogicalVolume(solidTruck, ammoniumNitrate, "logicTruck");
+	logicTruck = new G4LogicalVolume(solidTruck, cargoMat, "logicTruck");
 	physTruck = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicTruck, "physTruck", logicWorld, false, 0, true); 
 
 	// Create wheel

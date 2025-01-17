@@ -42,8 +42,15 @@ class RPCConstruction : public G4VUserDetectorConstruction {
 		G4VPhysicalVolume *physWorld, *physTruck, *physPixel;
 
 		void DefineMaterials();
-		G4Material *worldMat, *ammoniumNitrate;
+		G4Material *worldMat;
+		G4String cargoMaterial;
+		G4Material *cargoMat;
+
+		G4Material *ammoniumNitrate;
+		G4Material *lithium, *aluminium, *copper, *lead;
 
 		virtual void ConstructSDandField();
+
+		G4GenericMessenger *fMessenger;
 };
 #endif

@@ -19,15 +19,15 @@ RPCConstruction::RPCConstruction() {
 	wheelRadius = 0.5*m;
 
 	// Size of one pixel, and the numbers of pixel along the x and z directions
-	xPixelFull = 6*cm;
-	yPixelFull = 1*cm;
-	zPixelFull = 12*cm; 
-	numX = 155; //405;   
-	numZ = 155; //405;  
+	xPixelFull = 24*cm;
+	yPixelFull = 2*mm;
+	zPixelFull = 24*cm; 
+	numX = 61; //405;   
+	numZ = 61; //405;  
 
 	// heights of RPC plates from top/bottom of truck 
 	//height = {-3*m, 3*m};  
-	height = {-4*m, -2*m, 2*m, 4*m};
+	height = {-2*m, -1.5*m, -1*m, -0.5*m, 0.5*m, 1*m, 1.5*m, 2*m};
 
 	DefineMaterials();
 }

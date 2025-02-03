@@ -40,7 +40,7 @@ mkdir build
 cd build
 cmake ..  # Need to configure+build again if you change the source files or add new files
 make
-./muonTruck.cc    # Or ./muonTruck.cc runMultiMuon.mac to run in batch mode
+../muonTruck.cc    # Or ../muonTruck.cc runMultiMuon.mac to run in batch mode
 ```
 
 ## Windows
@@ -50,7 +50,7 @@ mkdir build
 cd build
 cmake ..  # Need to configure+build again if you change the source files or add new files
 msbuild muTruck.sln /p:Configuration=Release /m:4
-Release\muonTruck.exe
+Release\muonTruck.exe  # Or Release\muonTruck.exe runMultiMuon.mac to run in batch mode
 ```
 
 # Documentation

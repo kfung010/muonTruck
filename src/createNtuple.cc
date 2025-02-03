@@ -6,6 +6,10 @@ CreateNtuple::CreateNtuple() {
 
 	manager->CreateNtuple("generator", "generator");
 	manager->CreateNtupleDColumn("muonMomentum");
+	manager->CreateNtupleDColumn("muonMomentumX");
+	manager->CreateNtupleDColumn("muonMomentumY");
+	manager->CreateNtupleDColumn("muonMomentumZ");
+	manager->CreateNtupleDColumn("muonMomentum_Zenith");
 	manager->FinishNtuple(0);
 
 	manager->CreateNtuple("events", "events");

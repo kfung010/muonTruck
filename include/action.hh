@@ -11,6 +11,7 @@ class Action : public G4VUserActionInitialization {
 		~Action();
 
 		virtual void Build() const;
+		virtual void BuildForMaster() const;
 };
 
 #endif

@@ -22,6 +22,9 @@ class muonGenerator : public G4VUserPrimaryGeneratorAction {
 		G4double cosThetaStar(G4double theta);
 		G4double flux(G4double theta, G4double ene);
 		std::tuple<G4double, G4double, G4double> cosmicMuonZenithPhiAndEnergy(G4double thetaLow=0, G4double thetaUp=pi/2, G4double phiLow=0, G4double phiUp=2*pi, G4double eneLow=0.5, G4double eneUp=10);
+		
+		G4String distribution;
+		G4GenericMessenger *fMessenger;
 };
 
 #endif

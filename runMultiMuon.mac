@@ -1,17 +1,23 @@
-#/run/beamOn 2000
-
-/cargo/cargoMaterial lithium
-/run/reinitializeGeometry
+/run/numberOfThreads 16
+/run/initialize
 /run/beamOn 2000
 
-/cargo/cargoMaterial aluminium
-/run/reinitializeGeometry
-/run/beamOn 2000
+#/cargo/cargoMaterial lithium
+#/run/reinitializeGeometry
+#/run/beamOn 20000
 
-/cargo/cargoMaterial copper
-/run/reinitializeGeometry
-/run/beamOn 2000
+#/cargo/cargoMaterial aluminium
+#/run/reinitializeGeometry
+#/run/beamOn 20000
 
-/cargo/cargoMaterial lead
-/run/reinitializeGeometry
-/run/beamOn 2000
+#/cargo/cargoMaterial copper
+#/run/reinitializeGeometry
+#/run/beamOn 1000
+
+#/cargo/cargoMaterial lead
+#/run/reinitializeGeometry
+#/run/beamOn 20000
+
+#/cargo/cargoMaterial carbon
+#/run/reinitializeGeometry
+#/run/beamOn 20000

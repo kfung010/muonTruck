@@ -14,7 +14,7 @@ RPCConstruction::RPCConstruction() {
 
 	// Dimensions of the cargo
 	xTruckFull = 2.5*m;
-	yTruckFull = 3*m;
+	yTruckFull = 4*mm; //3*m;
 	zTruckFull = 10*m;
 	wheelRadius = 0.5*m;
 
@@ -47,7 +47,9 @@ void RPCConstruction::DefineMaterials() {
 	lithium = nist->FindOrBuildMaterial("G4_Li");
 	aluminium = nist->FindOrBuildMaterial("G4_Al");
     copper = nist->FindOrBuildMaterial("G4_Cu");
+	tungsten = nist->FindOrBuildMaterial("G4_W");
     lead = nist->FindOrBuildMaterial("G4_Pb");
+	carbon = nist->FindOrBuildMaterial("G4_C");
 }
 
 G4VPhysicalVolume *RPCConstruction::Construct() {
@@ -61,8 +63,10 @@ G4VPhysicalVolume *RPCConstruction::Construct() {
 	if (cargoMaterial == "lithium") cargoMat = lithium;
 	else if (cargoMaterial == "aluminium") cargoMat = aluminium;
 	else if (cargoMaterial == "copper") cargoMat = copper;
+	else if (cargoMaterial == "tungsten") cargoMat = tungsten;
 	else if (cargoMaterial == "lead") cargoMat = lead;
 	else if (cargoMaterial == "ammoniumNitrate") cargoMat = ammoniumNitrate;
+	else if (cargoMaterial == "carbon") cargoMat = carbon;
 	else throw std::runtime_error("Invalid cargo material. Program ended with an error.");
 
 	solidTruck = new G4Box("solidTruck", xTruckFull/2, yTruckFull/2, zTruckFull/2);

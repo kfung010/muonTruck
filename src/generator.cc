@@ -1,6 +1,12 @@
 #include "generator.hh"
 
 muonGenerator::muonGenerator() {
+
+	fMessenger = new G4GenericMessenger(this, "/generation/", "Muon generation");
+	fMessenger->DeclareProperty("distribution", distribution, "Muon energy and angular distribution");  //mono, random, cosmic
+
+	distribution = "mono";
+
 	G4Random::setTheSeed(12);
     fParticleGun = new G4ParticleGun(1);  //number of particles per event (several events = 1 run)
 	G4ParticleTable *particleTable = G4ParticleTable::GetParticleTable();
@@ -16,45 +22,58 @@ void muonGenerator::GeneratePrimaries(G4Event *anEvent) {
 
 	const RPCConstruction *rpcConstruction = static_cast<const RPCConstruction *> (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
 	
-	// Generate muon vertically above the center
-	/*G4double yHighestRPC = rpcConstruction->getyHighestRPC();
-	G4double xPos = 0 + 10*m * 0;
-	G4double yPos = yHighestRPC + 10*m * 1;
-	G4double zPos = 0 + 10*m * 0;
-	G4double xMom = 0;
-	G4double yMom = -1;
-	G4double zMom = 0;
-	G4double momGenerate = 0.5;*/
+	G4double xPos;
+	G4double yPos;
+	G4double zPos;
+	G4double xMom;
+	G4double yMom;
+	G4double zMom;
+	G4double momGenerate;
+	G4double thetaRdmGenerate;
 
-	// Generate muon from 0 to 45 degrees to the vertical, and it is ensured to pass through the top RPC plate
-	/*G4double xRdmGenerate = G4UniformRand()*rpcConstruction->getxRPCFull() - rpcConstruction->getxRPCFull()/2;
-	G4double yHighestRPC = rpcConstruction->getyHighestRPC();
-	G4double zRdmGenerate = G4UniformRand()*rpcConstruction->getzRPCFull() - rpcConstruction->getzRPCFull()/2;
-	G4double thetaRdmGenerate = G4UniformRand()*pi/4;
-	G4double phiRdmGenerate = G4UniformRand()*2*pi;
-	G4double xMom = -std::sin(thetaRdmGenerate)*std::cos(phiRdmGenerate);
-	G4double yMom = -fabs(std::cos(thetaRdmGenerate));
-	G4double zMom = -std::sin(thetaRdmGenerate)*std::sin(phiRdmGenerate);
-	G4double xPos = xRdmGenerate - 10*m * xMom;
-	G4double yPos = yHighestRPC - 10*m * yMom;
-	G4double zPos = zRdmGenerate - 10*m * zMom;
-	G4double momGenerate = G4UniformRand()*9 + 1;*/
+	if (distribution == "mono") {  // Generate muon with fixed momenta vertically above the center
+		G4double yHighestRPC = rpcConstruction->getyHighestRPC();
+		xPos = 0 + 10*m * 0;
+		yPos = yHighestRPC + 10*m * 1;
+		zPos = 0 + 10*m * 0;
+		xMom = 0;
+		yMom = -1;
+		zMom = 0;
+		momGenerate = 5;  // Change the muon momentum here
+		thetaRdmGenerate = 0;
+	}
+	else if (distribution == "random") {  // Generate muon from 0 to 45 degrees to the vertical, and it is ensured to pass through the top RPC plate
+		G4double xRdmGenerate = G4UniformRand()*rpcConstruction->getxRPCFull() - rpcConstruction->getxRPCFull()/2;
+		G4double yHighestRPC = rpcConstruction->getyHighestRPC();
+		G4double zRdmGenerate = G4UniformRand()*rpcConstruction->getzRPCFull() - rpcConstruction->getzRPCFull()/2;
+		thetaRdmGenerate = G4UniformRand()*pi/4;
+		G4double phiRdmGenerate = G4UniformRand()*2*pi;
+		xMom = -std::sin(thetaRdmGenerate)*std::cos(phiRdmGenerate);
+		yMom = -fabs(std::cos(thetaRdmGenerate));
+		zMom = -std::sin(thetaRdmGenerate)*std::sin(phiRdmGenerate);
+		xPos = xRdmGenerate - 10*m * xMom;
+		yPos = yHighestRPC - 10*m * yMom;
+		zPos = zRdmGenerate - 10*m * zMom;
+		momGenerate = G4UniformRand()*9 + 1;
+	}
+	else if (distribution == "cosmic") {  // Generate muon energy and direction according to a measured distribution, and it is ensured to pass through the center of the top RPC plate
+		G4double xCenter = 0;
+		G4double yHighestRPC = rpcConstruction->getyHighestRPC();
+		G4double zCenter = 0;
+		auto thetaPhiEnergy = cosmicMuonZenithPhiAndEnergy();
+		thetaRdmGenerate = std::get<0>(thetaPhiEnergy);
+		G4double phiRdmGenerate = std::get<1>(thetaPhiEnergy);
+		xMom = -std::sin(thetaRdmGenerate)*std::cos(phiRdmGenerate);
+		yMom = -fabs(std::cos(thetaRdmGenerate));
+		zMom = -std::sin(thetaRdmGenerate)*std::sin(phiRdmGenerate);
+		xPos = xCenter - 10*m * xMom;
+		yPos = yHighestRPC - 10*m * yMom;
+		zPos = zCenter - 10*m * zMom;
+		G4double energyRdmGenerate = std::get<2>(thetaPhiEnergy);
+		momGenerate = sqrt(energyRdmGenerate*energyRdmGenerate-0.10566*0.10566);
+	}
+	else throw std::runtime_error("Invalid muon generation mode. Program ended with an error.");
 
-	// Generate muon energy and direction according to a measured distribution, and it is ensured to pass through the center of the top RPC plate
-	G4double xCenter = 0;
-	G4double yHighestRPC = rpcConstruction->getyHighestRPC();
-	G4double zCenter = 0;
-	auto thetaPhiEnergy = cosmicMuonZenithPhiAndEnergy();
-	G4double thetaRdmGenerate = std::get<0>(thetaPhiEnergy);
-	G4double phiRdmGenerate = std::get<1>(thetaPhiEnergy);
-	G4double xMom = -std::sin(thetaRdmGenerate)*std::cos(phiRdmGenerate);
-	G4double yMom = -fabs(std::cos(thetaRdmGenerate));
-	G4double zMom = -std::sin(thetaRdmGenerate)*std::sin(phiRdmGenerate);
-	G4double xPos = xCenter - 10*m * xMom;
-	G4double yPos = yHighestRPC - 10*m * yMom;
-	G4double zPos = zCenter - 10*m * zMom;
-	G4double energyRdmGenerate = std::get<2>(thetaPhiEnergy);
-	G4double momGenerate = sqrt(energyRdmGenerate*energyRdmGenerate-0.105*0.105);
 
 	// Initial position to generate muon
 	G4ThreeVector pos(xPos, yPos, zPos);   

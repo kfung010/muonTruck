@@ -47,7 +47,7 @@ class RPCConstruction : public G4VUserDetectorConstruction {
 		G4Material *cargoMat;
 
 		G4Material *ammoniumNitrate;
-		G4Material *lithium, *aluminium, *copper, *lead;
+		G4Material *lithium, *aluminium, *copper, *lead, *tungsten, *carbon;
 
 		virtual void ConstructSDandField();
 

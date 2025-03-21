@@ -53,13 +53,20 @@ msbuild muTruck.sln /p:Configuration=Release /m:4
 Release\muonTruck.exe  # Or Release\muonTruck_multithread.exe runMultiMuon.mac to run in batch mode
 ```
 
+The apparatus and the muon generation can be controlled by the following self-defined macro commands:
+- /apparatus/worldMaterial : air, vacuum
+- /apparatus/cargoMaterial : lithium, aluminium, copper, lead, ammoniumNitrate, carbon, tungsten, water
+- /apparatus/rpcMaterial : air, vacuum
+- /apparatus/cargoThickness (in cm)
+- /generation/distribution : monoEnergy_vertical, randomEnergy_vertical, randomEnergy_randomAngle, cosmic 
+
 # Documentation
 ## Folders and files
 * `\include` contains the necessary header files, in which the declarations of variables, functions and classes are put
 * `\src` contains the source files, in which the definitions and actual implementations of the functions and classes are put
-* `muonTruck.cc` is the main file to execute
+* `muonTruck.cc` or  `muonTruck_multithread_.cc`  are the main files to execute
 * `vis.mac` contains the macro commands for the visualization settings in the interaction interface
-* `runMultiMuon.mac` contains the macro commands to run in batch mode (i.e. run multiple events and do not show the interaction interface)
+* `runMultiMuon.mac` contains the macro commands to run in batch mode (i.e. run multiple events and do not show the interaction interface). 
 
 ## Modules
 * `construction` defines the geometry of the cargo and RPCs, their positions and the materials filling them

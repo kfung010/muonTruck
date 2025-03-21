@@ -7,12 +7,12 @@
 
 class CreateNtuple : public G4UserRunAction {
 
-	public:
-		CreateNtuple();
-		~CreateNtuple();
+    public:
+        CreateNtuple();
+        ~CreateNtuple();
 
-		virtual void BeginOfRunAction(const G4Run *);
-		virtual void EndOfRunAction(const G4Run *);
+        virtual void BeginOfRunAction(const G4Run *);
+        virtual void EndOfRunAction(const G4Run *);
 };
 
 

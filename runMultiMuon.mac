@@ -1,23 +1,36 @@
+###########################################################
+### Self-defined options:
+### /apparatus/worldMaterial -> air, vacuum
+### /apparatus/cargoMaterial -> lithium, aluminium, copper, lead, ammoniumNitrate, carbon, tungsten, water
+### /apparatus/rpcMaterial -> air, vacuum
+### /apparatus/cargoThickness (in cm)
+### /generation/distribution -> monoEnergy_vertical (5GeV), randomEnergy_vertical (1GeV-10GeV), randomEnergy_randomAngle (0-pi/2), cosmic 
+############################################################
+
+
+######################## Single thread mode
+
+#/apparatus/worldMaterial vacuum
+#/apparatus/cargoMaterial copper
+#/apparatus/rpcMaterial vacuum
+#/apparatus/cargoThickness 1
+#/generation/distribution monoEnergy_vertical
+#/run/reinitializeGeometry
+#/run/beamOn 500
+
+
+
+######################## Multi-thread mode
+
 /run/numberOfThreads 16
 /run/initialize
-/run/beamOn 2000
 
-#/cargo/cargoMaterial lithium
-#/run/reinitializeGeometry
-#/run/beamOn 20000
+/apparatus/worldMaterial vacuum   
+/apparatus/cargoMaterial copper
+/apparatus/rpcMaterial vacuum
+/apparatus/cargoThickness 1
+/generation/distribution monoEnergy_vertical
+/run/reinitializeGeometry
+/run/beamOn 100000
 
-#/cargo/cargoMaterial aluminium
-#/run/reinitializeGeometry
-#/run/beamOn 20000
 
-#/cargo/cargoMaterial copper
-#/run/reinitializeGeometry
-#/run/beamOn 1000
-
-#/cargo/cargoMaterial lead
-#/run/reinitializeGeometry
-#/run/beamOn 20000
-
-#/cargo/cargoMaterial carbon
-#/run/reinitializeGeometry
-#/run/beamOn 20000

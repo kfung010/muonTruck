@@ -43,16 +43,6 @@ make
 ./muonTruck    # Or ./muonTruck_multithread runMultiMuon.mac to run in batch mode and multithread mode
 ```
 
-## Lxplus
-```sh
-cd /path/to/muonTruck
-source setup_lxplus.sh
-cd build
-cmake ..  # Need to configure+build again if you change the source files or add new files
-make
-./muonTruck    # Or ./muonTruck_multithread runMultiMuon.mac to run in batch mode
-```
-
 ## Windows
 ```sh
 cd \path\to\muonTruck

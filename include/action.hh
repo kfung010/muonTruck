@@ -6,12 +6,12 @@
 #include "createNtuple.hh"
 
 class Action : public G4VUserActionInitialization {
-	public:
-		Action();
-		~Action();
+    public:
+        Action();
+        ~Action();
 
-		virtual void Build() const;
-		virtual void BuildForMaster() const;
+        virtual void Build() const;
+        virtual void BuildForMaster() const;
 };
 
 #endif

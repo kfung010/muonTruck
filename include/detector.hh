@@ -7,13 +7,16 @@
 #include "G4SystemOfUnits.hh"
 #include "G4PhysicsOrderedFreeVector.hh"
 
-class RPCDetector: public G4VSensitiveDetector {
+class SensitiveDetector: public G4VSensitiveDetector {
 
-	public:
-		RPCDetector(G4String);
-		~RPCDetector();
-	private:
-		virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
+    public:
+        SensitiveDetector(G4String name, G4String detection);
+        ~SensitiveDetector();
+    private:
+        G4String fDetection;
+        virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
+        void FillHitData(G4StepPoint* stepPoint, G4int eventNum);
+        void FillTruckData(G4StepPoint* stepPoint, G4int eventNum);
 };
 
 #endif

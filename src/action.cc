@@ -10,8 +10,14 @@ void Action::BuildForMaster() const {
 }
 
 void Action::Build() const {
-    muonGenerator *generator = new muonGenerator();
+
+    EventAction *eventAction = new EventAction();
+    
+    muonGenerator *generator = new muonGenerator(eventAction);
     SetUserAction(generator);
+    SetUserAction(eventAction);
+    
     CreateNtuple *createNtuple = new CreateNtuple(); 
     SetUserAction(createNtuple);
+    
 }

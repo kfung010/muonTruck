@@ -5,11 +5,11 @@ CreateNtuple::CreateNtuple() {
     G4AnalysisManager *manager = G4AnalysisManager::Instance();
 
     manager->CreateNtuple("generator", "generator");   // Information of generated muons
+    manager->CreateNtupleIColumn("eventNumber");
     manager->CreateNtupleDColumn("muonMomentum");
     manager->CreateNtupleDColumn("muonMomentumX");
     manager->CreateNtupleDColumn("muonMomentumY");
     manager->CreateNtupleDColumn("muonMomentumZ");
-    manager->CreateNtupleDColumn("muonMomentum_Zenith");
     manager->FinishNtuple(0);
 
     manager->CreateNtuple("hits", "hits");   // Information of RPC hits
@@ -27,7 +27,7 @@ CreateNtuple::CreateNtuple() {
     manager->CreateNtupleDColumn("hitMomentumZ_truth");
     manager->FinishNtuple(1);
     
-    manager->CreateNtuple("truck", "truck");   // Information of scattering points in the truck
+    /*manager->CreateNtuple("truck", "truck");   // Information of scattering points in the truck
     manager->CreateNtupleIColumn("eventNumber");
     manager->CreateNtupleDColumn("muonMomentum");  // GeV
     manager->CreateNtupleDColumn("scatTime");  // ns
@@ -37,7 +37,7 @@ CreateNtuple::CreateNtuple() {
     manager->CreateNtupleDColumn("scatMomentumX_truth");
     manager->CreateNtupleDColumn("scatMomentumY_truth");
     manager->CreateNtupleDColumn("scatMomentumZ_truth");
-    manager->FinishNtuple(2);
+    manager->FinishNtuple(2);*/
 
 }
 

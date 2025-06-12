@@ -1,11 +1,17 @@
 #include "generator.hh"
 
-muonGenerator::muonGenerator() {
+muonGenerator::muonGenerator(EventAction* eventAction) : fEventAction(eventAction) {
 
     fMessenger = new G4GenericMessenger(this, "/generation/", "Muon generation");
-    fMessenger->DeclareProperty("distribution", distribution, "Muon energy and angular distribution");  //monoEnergy_vertical, randomEnergy_vertical, randomEnergy_randomAngle, cosmic
+    fMessenger->DeclareProperty("distribution", distribution, "Muon energy and angular distribution");
+    fMessenger->DeclareProperty("muonEnergy", muEne, "Muon energy for monoEnergy_vertical");
+    fMessenger->DeclareProperty("muonAngle", muAng, "Muon zenith angle for monoEnergy_tilt");
+    fMessenger->DeclareProperty("displacement", muDisp, "Horizontal displacement from the center");
 
-    distribution = "monoEnergy_vertical";
+    distribution = "cosmic";
+    muEne = 5;
+    muAng = pi/4;
+    muDisp = 0;
 
     G4Random::setTheSeed(12);
     fParticleGun = new G4ParticleGun(1);  //number of particles per event (several events = 1 run)
@@ -23,54 +29,83 @@ void muonGenerator::GeneratePrimaries(G4Event *anEvent) {
 
     const RPCConstruction *rpcConstruction = static_cast<const RPCConstruction *> (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
     
-    G4double xPos;
-    G4double yPos;
-    G4double zPos;
-    G4double xMom;
-    G4double yMom;
-    G4double zMom;
+    G4double xPos, yPos, zPos;
+    G4double xMom, yMom, zMom;
     G4double momGenerate;
     G4double thetaRdmGenerate;
 
-    if (distribution == "monoEnergy_vertical" || distribution == "randomEnergy_vertical") {  // Generate muon with fixed momenta vertically above the center
-        G4double yHighestRPC = rpcConstruction->getyHighestRPC();
+    if (distribution == "monoEnergy_vertical" || distribution == "randomEnergy_vertical") {
+        G4double zHighestRPC = rpcConstruction->getzHighestRPC();
         xPos = 0;
-        yPos = yHighestRPC + 10*m;
-        zPos = 0;
+        yPos = 0;
+        zPos = zHighestRPC + 10*m;
         xMom = 0;
-        yMom = -1;
-        zMom = 0;
-        if (distribution == "monoEnergy_vertical") momGenerate = 5;  //GeV, Change the muon momentum here
-        else momGenerate = G4UniformRand()*9 + 1; 
+        yMom = 0;
+        zMom = -1;
+        if (distribution == "monoEnergy_vertical") momGenerate = muEne;
+        else momGenerate = G4UniformRand()*49 + 1; 
         thetaRdmGenerate = 0;
     }
-    else if (distribution == "randomEnergy_randomAngle") {  // Generate muon with random momentum and random zenith from 0 to 45 degrees, and it is ensured to pass through the top surface of the truck
+    else if (distribution == "test") {
         G4double xRdmGenerate = G4UniformRand()*rpcConstruction->getxTruckFull() - rpcConstruction->getxTruckFull()/2;
-        G4double yHighestRPC = rpcConstruction->getyHighestTruck();
-        G4double zRdmGenerate = G4UniformRand()*rpcConstruction->getzTruckFull() - rpcConstruction->getzTruckFull()/2;
-        G4double thetaRdmGenerate = G4UniformRand()*pi/4;
+        G4double yRdmGenerate = G4UniformRand()*rpcConstruction->getyTruckFull() - rpcConstruction->getyTruckFull()/2;
+        G4double zHighestRPC = rpcConstruction->getzHighestTruck();
+        G4double theta = muAng;
+        G4double phi = G4UniformRand()*2*pi;
+        xMom = -std::sin(theta)*std::cos(phi);
+        yMom = -std::sin(theta)*std::sin(phi);
+        zMom = -fabs(std::cos(theta));
+        xPos = xRdmGenerate -10*m * xMom;
+        yPos = yRdmGenerate -10*m * yMom;
+        zPos = zHighestRPC - 10*m * zMom;
+        momGenerate = muEne;
+        thetaRdmGenerate = 0;
+    }
+    else if (distribution == "monoEnergy_tilt" || distribution == "randomEnergy_tilt") {
+        G4double zHighestRPC = rpcConstruction->getzHighestRPC();
+        G4double theta = muAng;
+        G4double phi = 0;
+        xMom = -std::sin(theta)*std::cos(phi);
+        yMom = -std::sin(theta)*std::sin(phi);
+        zMom = -fabs(std::cos(theta));
+        xPos = muDisp*cm-10*m * xMom;
+        yPos = -10*m * yMom;
+        zPos = zHighestRPC - 10*m * zMom;
+        if (distribution == "monoEnergy_tilt") momGenerate = muEne;
+        else momGenerate = G4UniformRand()*49 + 1; 
+        thetaRdmGenerate = 0;
+    }
+    else if (distribution == "monoEnergy_randomAngle" || distribution == "randomEnergy_randomAngle") {
+        G4double xRdmGenerate = G4UniformRand()*rpcConstruction->getxRPCFull() - rpcConstruction->getxRPCFull()/2;
+        G4double yRdmGenerate = G4UniformRand()*rpcConstruction->getyRPCFull() - rpcConstruction->getyRPCFull()/2;
+        G4double zHighestRPC = rpcConstruction->getzHighestRPC();
+        G4double thetaRdmGenerate = G4UniformRand()*pi/2;
         G4double phiRdmGenerate = G4UniformRand()*2*pi;
         xMom = -std::sin(thetaRdmGenerate)*std::cos(phiRdmGenerate);
-        yMom = -fabs(std::cos(thetaRdmGenerate));
-        zMom = -std::sin(thetaRdmGenerate)*std::sin(phiRdmGenerate);
+        yMom = -std::sin(thetaRdmGenerate)*std::sin(phiRdmGenerate);
+        zMom = -fabs(std::cos(thetaRdmGenerate));
         xPos = xRdmGenerate - 10*m * xMom;
-        yPos = yHighestRPC - 10*m * yMom;
-        zPos = zRdmGenerate - 10*m * zMom;
-        momGenerate = 5; //G4UniformRand()*9 + 1;
+        yPos = yRdmGenerate - 10*m * yMom;
+        zPos = zHighestRPC - 10*m * zMom;
+        if (distribution == "monoEnergy_randomAngle") momGenerate = muEne;
+        else momGenerate = G4UniformRand()*49 + 1; 
     }
-    else if (distribution == "cosmic") {  // Generate muon energy and direction according to a measured distribution, and it is ensured to pass through the top surface of the truck
-        G4double xRdmGenerate = G4UniformRand()*rpcConstruction->getxTruckFull() - rpcConstruction->getxTruckFull()/2;
-        G4double yHighestRPC = rpcConstruction->getyHighestTruck();
-        G4double zRdmGenerate = G4UniformRand()*rpcConstruction->getzTruckFull() - rpcConstruction->getzTruckFull()/2;
+    else if (distribution == "cosmic") {  
+        G4double xRdmGenerate = G4UniformRand()*rpcConstruction->getxRPCFull() - rpcConstruction->getxRPCFull()/2;
+        G4double yRdmGenerate = G4UniformRand()*rpcConstruction->getyRPCFull() - rpcConstruction->getyRPCFull()/2;
+        G4double zHighestRPC = rpcConstruction->getzHighestRPC();
+
         auto thetaPhiEnergy = cosmicMuonZenithPhiAndEnergy();
         thetaRdmGenerate = std::get<0>(thetaPhiEnergy);
         G4double phiRdmGenerate = std::get<1>(thetaPhiEnergy);
         xMom = -std::sin(thetaRdmGenerate)*std::cos(phiRdmGenerate);
-        yMom = -fabs(std::cos(thetaRdmGenerate));
-        zMom = -std::sin(thetaRdmGenerate)*std::sin(phiRdmGenerate);
+        yMom = -std::sin(thetaRdmGenerate)*std::sin(phiRdmGenerate);
+        zMom = -fabs(std::cos(thetaRdmGenerate));
+        
         xPos = xRdmGenerate - 10*m * xMom;
-        yPos = yHighestRPC - 10*m * yMom;
-        zPos = zRdmGenerate - 10*m * zMom;
+        yPos = yRdmGenerate - 10*m * yMom;
+        zPos = zHighestRPC - 10*m * zMom;
+        
         G4double energyRdmGenerate = std::get<2>(thetaPhiEnergy);
         momGenerate = sqrt(energyRdmGenerate*energyRdmGenerate-0.10566 * 0.10566);
     }
@@ -88,27 +123,27 @@ void muonGenerator::GeneratePrimaries(G4Event *anEvent) {
     // Initial muon energy
     fParticleGun->SetParticleMomentum(momGenerate*GeV);  // This is momentum only. Total energy is p^2+m^2.
 
-
     fParticleGun->GeneratePrimaryVertex(anEvent);
+    
+    G4int eventNum = anEvent->GetEventID();
+    FillGeneratorData(fParticleGun, eventNum);
 
-    G4ParticleDefinition* particleDef = fParticleGun->GetParticleDefinition();
-
-    // Store the generation information in the ntuple
-    G4ThreeVector position = fParticleGun->GetParticlePosition();
-    G4double momentum = fParticleGun->GetParticleMomentum();
-    G4ThreeVector momentumDirection = fParticleGun->GetParticleMomentumDirection();
+    //G4ParticleDefinition* particleDef = fParticleGun->GetParticleDefinition();
+    //G4ThreeVector position = fParticleGun->GetParticlePosition();
+    //G4double momentum = fParticleGun->GetParticleMomentum();
+    //G4ThreeVector momentumDirection = fParticleGun->GetParticleMomentumDirection();
     //G4cout << "Particle: " << particleDef->GetParticleName() << G4endl;
     //G4cout << "Momentum: " << momentum << G4endl;
     //G4cout << "Position: (" << position.x() / cm << ", " << position.y() / cm << ", " << position.z() / cm << ") cm" << G4endl;
     //G4cout << "Momentum Direction: (" << momentumDirection.x() << ", " << momentumDirection.y() << ", " << momentumDirection.z() << ")" << G4endl << G4endl;
+}
 
-    G4AnalysisManager *manager = G4AnalysisManager::Instance();
-    manager->FillNtupleDColumn(0, 0, momentum);
-    manager->FillNtupleDColumn(0, 1, momGenerate*xMom);
-    manager->FillNtupleDColumn(0, 2, momGenerate*yMom);
-    manager->FillNtupleDColumn(0, 3, momGenerate*zMom);
-    manager->FillNtupleDColumn(0, 4, thetaRdmGenerate);
-    manager->AddNtupleRow(0);
+void muonGenerator::FillGeneratorData(G4ParticleGun *gun, G4int eventNum) {
+    GeneratorData data;
+    data.eventNum = eventNum;
+    data.muonMomentum = gun->GetParticleMomentum() / GeV;
+    data.momMuon = gun->GetParticleMomentumDirection() / GeV;
+    fEventAction->CacheGenerator(eventNum, data);
 }
 
 G4double muonGenerator::cosThetaStar(G4double theta) {

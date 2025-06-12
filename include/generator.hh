@@ -10,10 +10,11 @@
 #include "G4IonTable.hh"
 #include "G4PhysicalConstants.hh"
 #include "construction.hh"
+#include "eventAction.hh"
 
 class muonGenerator : public G4VUserPrimaryGeneratorAction {
     public:
-        muonGenerator();
+        muonGenerator(EventAction* eventAction);
         ~muonGenerator();
         virtual void GeneratePrimaries(G4Event *);
 
@@ -24,7 +25,12 @@ class muonGenerator : public G4VUserPrimaryGeneratorAction {
         std::tuple<G4double, G4double, G4double> cosmicMuonZenithPhiAndEnergy(G4double thetaLow=0, G4double thetaUp=pi/2, G4double phiLow=0, G4double phiUp=2*pi, G4double eneLow=0.5, G4double eneUp=10);
 		
         G4String distribution;
+        G4double muEne, muAng, muDisp;
         G4GenericMessenger *fMessenger;
+        
+        EventAction *fEventAction;
+        
+        void FillGeneratorData(G4ParticleGun *gun, G4int eventNum);
 };
 
 #endif

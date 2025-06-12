@@ -10,6 +10,7 @@
 #include "construction.hh"  
 #include "physics.hh"  
 #include "action.hh"
+#include "eventAction.hh"
 
 
 int main(int argc, char** argv) {
@@ -25,6 +26,9 @@ int main(int argc, char** argv) {
 	runManager->SetUserInitialization(new RPCConstruction());   
 	runManager->SetUserInitialization(new PhysicsList());
 	runManager->SetUserInitialization(new Action());
+ 
+  //EventAction* eventAction = new EventAction();
+	//runManager->SetUserAction(eventAction);
 
 	if (argc == 1) {
 		G4cerr << "Please use the configuration file, e.g. runMultiMuon.mac" << G4endl;

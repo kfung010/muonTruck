@@ -1,72 +1,156 @@
 #include "construction.hh"
 
 RPCConstruction::RPCConstruction() {
+    
+    DefineMaterials();
 
     fMessenger = new G4GenericMessenger(this, "/apparatus/", "Construction of the apparatus");
-    fMessenger->DeclareProperty("worldMaterial", worldMaterial, "World material");  //air, vacuum
-    fMessenger->DeclareProperty("rpcMaterial", rpcMaterial, "RPC material");  //air, vacuum
-    fMessenger->DeclareProperty("cargoMaterial", cargoMaterial, "Material in cargo");  //lithium, aluminium, copper, lead, ammoniumNitrate, carbon, tungsten, water
-    fMessenger->DeclareProperty("cargoThickness", cargoThickness, "Cargo thickness in cm");
-    fMessenger->DeclareProperty("cargoLength", cargoLength, "Cargo length in cm");
-    fMessenger->DeclareProperty("cargoWidth", cargoWidth, "Cargo width in cm");
-    
+    fMessenger->DeclareProperty("worldMaterial", worldMaterial, "World material");
+    fMessenger->DeclareProperty("rpcMaterial", rpcMaterial, "RPC material");
     fMessenger->DeclareProperty("pixelThickness", pixelThickness, "RPC pixel thickness in mm");
     fMessenger->DeclareProperty("pixelLength", pixelLength, "RPC pixel length in cm");
     fMessenger->DeclareProperty("pixelWidth", pixelWidth, "RPC pixel width in cm");
     fMessenger->DeclareProperty("pixelNum1", numX, "Number of RPC pixels in the x direction");
     fMessenger->DeclareProperty("pixelNum2", numY, "Number of RPC pixels in the y direction");
+    fMessenger->DeclareProperty("cargoStepLimit", cargoStepLimit, "Cargo step limit in mm");
+    fMessenger->DeclareProperty("surroundingStepLimit", surroundingStepLimit, "Surroundings step limit in mm");
     
-    fMessenger->DeclareProperty("stepLimit", stepLimit, "Step limit in mm"); //testing
+    fMessenger->DeclareMethod("clearHeights", 
+                             &RPCConstruction::ClearRPCHeights, 
+                             "Clear all RPC heights");
     
+    fMessenger->DeclareMethod("addHeight", 
+                             &RPCConstruction::AddRPCHeight, 
+                             "Add RPC height (in cm)");
     
-    worldMaterial = "air";
-    cargoMaterial = "tungsten";
-    rpcMaterial = "air";
-    cargoThickness = 100;
-    cargoLength = 100;
-    cargoWidth = 100;
-    pixelThickness = 1;
-    pixelLength = 995;
-    pixelWidth = 995;
-    numX = 1;
-    numY = 1;
+    fMessenger->DeclareMethod("clearCargo", 
+                             &RPCConstruction::ClearCargo, 
+                             "Clear all cargo");
     
-    stepLimit = 0.01;
-
-	  // Dimensions of the world
-    xWorldFull = 50*m;
-    yWorldFull = 50*m;
-    zWorldFull = 50*m;
-
-    // heights of RPC plates from top/bottom of truck 
-    //height = {-3*m, 3*m};  
-    //height = {-2*m, -1.5*m, -1*m, -0.5*m, 0.5*m, 1*m, 1.5*m, 2*m};
-    height = {-90*cm, -70*cm, -50*cm, -30*cm, 30*cm, 50*cm, 70*cm, 90*cm};
-
+    fMessenger->DeclareMethod("addBox", 
+                             &RPCConstruction::AddCargoBox, 
+                             "Add box cargo: name l(cm) w(cm) h(cm) x(cm) y(cm) z(cm) material");
+    
+    fMessenger->DeclareMethod("addEllipsoid", 
+                             &RPCConstruction::AddCargoEllipsoid, 
+                             "Add ellipsoid cargo: name xSemiAxis(cm) ySemiAxis(cm) zSemiAxis(cm) x(cm) y(cm) z(cm) material");
+    
+    fMessenger->DeclareMethod("addCylinder", 
+                             &RPCConstruction::AddCargoCylinder, 
+                             "Add cylinder cargo: name innerRadius(cm) outerRadius(cm) height(cm) x(cm) y(cm) z(cm) material");
+    
 }
 
 RPCConstruction::~RPCConstruction() {}
+
+//void RPCConstruction::SetupCargoLayout() {
+//    
+//    // Material: lithium, aluminium, copper, lead, ammoniumNitrate, carbon, tungsten, water, air
+//    
+//    // One thin plate
+//    /*AddCargoBox("Box", 
+//                100*cm, 100*cm, 1*cm,
+//                0, 0, 0, 
+//                "copper");*/
+//    
+//    // One box
+//    /*AddCargoBox("Box", 
+//                100*cm, 100*cm, 100*cm,
+//                0, 0, 0, 
+//                "copper");*/
+//            
+//    // Two separated boxes
+//    AddCargoBox("CargoBox1", 
+//                100*cm, 100*cm, 100*cm,
+//                -150*cm, 0, 0, 
+//                "water");
+//    
+//    AddCargoBox("CargoBox2", 
+//                100*cm, 100*cm, 100*cm,
+//                150*cm, 0, 0,
+//                "lead");
+//    
+//    /*
+//    // Two stacked boxes
+//    AddCargoBox("BottomBox", 
+//                100*cm, 50*cm, 100*cm,
+//                0, 0, 25*cm,
+//                "tungsten");
+//    
+//    AddCargoBox("TopBox", 
+//                80*cm, 50*cm, 80*cm,
+//                0, 0, 75*cm,
+//                "aluminium");
+//    */
+//    
+//    // Add one box, one ellipsoid, one sphere
+//    /*AddCargoBox("CargoBox1", 
+//                100*cm, 100*cm, 100*cm,
+//                -150*cm, 0, 0, 
+//                "water");
+//    
+//    AddCargoEllipsoid("CargoEllipsoid1", 
+//                       50*cm, 50*cm, 50*cm, 
+//                       -40*cm, 0, 0,
+//                        "copper");
+//                        
+//    AddCargoCylinder("CargoCylinder1", 
+//                     0, 50*cm, 100*cm, 
+//                     90*cm, 90*cm, 0, "lead");*/
+//}
+
 
 void RPCConstruction::DefineMaterials() {
 
     G4NistManager *nist = G4NistManager::Instance();
     
     
-    if (!G4Material::GetMaterial("H2O")) {
+    if (!G4Material::GetMaterial("H2O", false)) {
         H2O = new G4Material("H2O", 1.000 * g / cm3, 2);
         H2O->AddElement(nist->FindOrBuildElement("H"), 2);
         H2O->AddElement(nist->FindOrBuildElement("O"), 1);
-    } else {
+    } 
+    else {
         H2O = G4Material::GetMaterial("H2O");
     }
 
-    if (!G4Material::GetMaterial("ammoniumNitrate")) {
+    if (!G4Material::GetMaterial("ammoniumNitrate", false)) {
         ammoniumNitrate = new G4Material("ammoniumNitrate", 1.72*g/cm3, 3);
         ammoniumNitrate->AddElement(nist->FindOrBuildElement("N"), 2);
         ammoniumNitrate->AddElement(nist->FindOrBuildElement("H"), 4);
         ammoniumNitrate->AddElement(nist->FindOrBuildElement("O"), 3);
-    } else {
+    } 
+    else {
         ammoniumNitrate = G4Material::GetMaterial("ammoniumNitrate");
+    }
+    
+    if (!G4Material::GetMaterial("C2H2F4", false)) {
+        C2H2F4 = new G4Material("C2H2F4", 4.25*mg/cm3, 3, kStateGas, 293.15*kelvin, 1*atmosphere);
+        C2H2F4->AddElement(nist->FindOrBuildElement("C"), 2);
+        C2H2F4->AddElement(nist->FindOrBuildElement("H"), 2);
+        C2H2F4->AddElement(nist->FindOrBuildElement("F"), 4);
+    } 
+    else {
+        C2H2F4 = G4Material::GetMaterial("C2H2F4");
+    }
+    
+    if (!G4Material::GetMaterial("iC4H10", false)) {
+        iC4H10 = new G4Material("iC4H10", 2.51*mg/cm3, 2, kStateGas, 293.15*kelvin, 1*atmosphere);
+        iC4H10->AddElement(nist->FindOrBuildElement("C"), 4);
+        iC4H10->AddElement(nist->FindOrBuildElement("H"), 10);
+    } 
+    else {
+        iC4H10 = G4Material::GetMaterial("iC4H10");
+    }
+    
+    if (!G4Material::GetMaterial("RPCgas", false)) {
+        G4double density = 0.95*4.25*mg/cm3 + 0.05*2.51*mg/cm3;
+        RPCgas = new G4Material("RPCgas", density, 2, kStateGas, 293.15*kelvin, 1*atmosphere);
+        RPCgas->AddMaterial(C2H2F4, 0.95);
+        RPCgas->AddMaterial(iC4H10, 0.05);
+    } 
+    else {
+        RPCgas = G4Material::GetMaterial("RPCgas");
     }
 
     lithium = nist->FindOrBuildMaterial("G4_Li");
@@ -77,85 +161,260 @@ void RPCConstruction::DefineMaterials() {
     carbon = nist->FindOrBuildMaterial("G4_C");
     air = nist->FindOrBuildMaterial("G4_AIR");
     vacuum = nist->FindOrBuildMaterial("G4_Galactic");
-    
+    /*
     if (worldMaterial == "air") worldMat = air;
     else if (worldMaterial == "vacuum") worldMat = vacuum;
     else throw std::runtime_error("Invalid world material. Program ended with an error.");
     
     if (rpcMaterial == "air") rpcMat = air;
     else if (rpcMaterial == "vacuum") rpcMat = vacuum;
-    else throw std::runtime_error("Invalid RPC material. Program ended with an error.");
-
-    if (cargoMaterial == "lithium") cargoMat = lithium;
-    else if (cargoMaterial == "aluminium") cargoMat = aluminium;
-    else if (cargoMaterial == "copper") cargoMat = copper;
-    else if (cargoMaterial == "tungsten") cargoMat = tungsten;
-    else if (cargoMaterial == "lead") cargoMat = lead;
-    else if (cargoMaterial == "ammoniumNitrate") cargoMat = ammoniumNitrate;
-    else if (cargoMaterial == "carbon") cargoMat = carbon;
-    else if (cargoMaterial == "water") cargoMat = H2O;
-    else if (cargoMaterial == "air") cargoMat = aluminium;
-    else throw std::runtime_error("Invalid cargo material. Program ended with an error.");
+    else if (rpcMaterial == "RPCgas") rpcMat = RPCgas;
+    else throw std::runtime_error("Invalid RPC material. Program ended with an error.");*/
 }
+
+void RPCConstruction::ClearRPCHeights() {
+    rpcHeights.clear();
+}
+
+void RPCConstruction::AddRPCHeight(G4double height) {
+    rpcHeights.push_back(height * cm);
+}
+
+void RPCConstruction::AddCargoBox(const G4String& name, G4double length, G4double width, 
+                                 G4double height, G4double posX, G4double posY, G4double posZ,
+                                 const G4String& materialName) {
+    CargoBox box;
+    box.name = name;
+    box.width = width;
+    box.height = height;
+    box.length = length;
+    box.position = G4ThreeVector(posX, posY, posZ);
+    box.material = GetMaterialByName(materialName);
+    cargoBoxes[name] = box;
+}
+
+void RPCConstruction::AddCargoEllipsoid(const G4String& name, 
+                                        G4double xSemiAxis, G4double ySemiAxis, G4double zSemiAxis,
+                                        G4double posX, G4double posY, G4double posZ,
+                                        const G4String& materialName) {
+    CargoEllipsoid ellipsoid;
+    ellipsoid.name = name;
+    ellipsoid.xSemiAxis = xSemiAxis;
+    ellipsoid.ySemiAxis = ySemiAxis;
+    ellipsoid.zSemiAxis = zSemiAxis;
+    ellipsoid.position = G4ThreeVector(posX, posY, posZ);
+    ellipsoid.material = GetMaterialByName(materialName);
+    cargoEllipsoids[name] = ellipsoid;
+}
+
+void RPCConstruction::AddCargoCylinder(const G4String& name, 
+                                       G4double innerRadius, G4double outerRadius, G4double height,
+                                       G4double posX, G4double posY, G4double posZ,
+                                       const G4String& materialName) {
+    CargoCylinder cylinder;
+    cylinder.name = name;
+    cylinder.innerRadius = innerRadius;
+    cylinder.outerRadius = outerRadius;
+    cylinder.height = height;
+    cylinder.position = G4ThreeVector(posX, posY, posZ);
+    cylinder.material = GetMaterialByName(materialName);
+    cargoCylinders[name] = cylinder;
+}
+
+
+void RPCConstruction::ClearCargo() {
+    cargoBoxes.clear();
+    cargoEllipsoids.clear();
+    cargoCylinders.clear();
+
+}
+
+void RPCConstruction::AddCargoBox(const G4String& params) {
+    std::vector<G4String> tokens;
+    std::istringstream iss(params);
+    G4String token;
+    
+    while (std::getline(iss, token, ',')) {
+        size_t start = token.find_first_not_of(" ");
+        size_t end = token.find_last_not_of(" ");
+        if (start != std::string::npos && end != std::string::npos) {
+            tokens.push_back(token.substr(start, end - start + 1));
+        } else if (!token.empty()) {
+            tokens.push_back(token);
+        }
+    }
+
+    if (tokens.size() < 8) {
+        G4cerr << "Error: Insufficient parameters for addBox. Expected 8, got " 
+               << tokens.size() << G4endl;
+        return;
+    }
+    
+    try {
+        G4double l = std::stod(tokens[1]);
+        G4double w = std::stod(tokens[2]);
+        G4double h = std::stod(tokens[3]);
+        G4double x = std::stod(tokens[4]);
+        G4double y = std::stod(tokens[5]);
+        G4double z = std::stod(tokens[6]);
+        
+        G4cout << "AddCargoBox: " << tokens[0] << " " << l << " " << w << " " << h 
+               << " " << x << " " << y << " " << z << " " << tokens[7] << G4endl;
+        
+        AddCargoBox(tokens[0], l*cm, w*cm, h*cm, x*cm, y*cm, z*cm, tokens[7]);
+    }
+    catch (const std::exception& e) {
+        G4cerr << "Error parsing parameters: " << e.what() << G4endl;
+    }
+}
+
+void RPCConstruction::AddCargoEllipsoid(const G4String& params) {
+    std::vector<G4String> tokens;
+    std::istringstream iss(params);
+    G4String token;
+    
+    while (std::getline(iss, token, ',')) {
+        size_t start = token.find_first_not_of(" ");
+        size_t end = token.find_last_not_of(" ");
+        if (start != std::string::npos && end != std::string::npos) {
+            tokens.push_back(token.substr(start, end - start + 1));
+        } else if (!token.empty()) {
+            tokens.push_back(token);
+        }
+    }
+
+    if (tokens.size() < 8) {
+        G4cerr << "Error: Insufficient parameters for addEllipsoid. Expected 8, got " 
+               << tokens.size() << G4endl;
+        return;
+    }
+    
+    try {
+        G4double xSemi = std::stod(tokens[1]);
+        G4double ySemi = std::stod(tokens[2]);
+        G4double zSemi = std::stod(tokens[3]);
+        G4double x = std::stod(tokens[4]);
+        G4double y = std::stod(tokens[5]);
+        G4double z = std::stod(tokens[6]);
+        
+        G4cout << "AddCargoEllipsoid: " << tokens[0] << " " << xSemi << " " << ySemi << " " << zSemi 
+               << " " << x << " " << y << " " << z << " " << tokens[7] << G4endl;
+        
+        AddCargoEllipsoid(tokens[0], 
+                         xSemi*cm, ySemi*cm, zSemi*cm,
+                         x*cm, y*cm, z*cm,
+                         tokens[7]);
+    }
+    catch (const std::exception& e) {
+        G4cerr << "Error parsing parameters: " << e.what() << G4endl;
+    }
+}
+
+void RPCConstruction::AddCargoCylinder(const G4String& params) {
+
+    std::vector<G4String> tokens;
+    std::istringstream iss(params);
+    G4String token;
+    
+    while (std::getline(iss, token, ',')) {
+        size_t start = token.find_first_not_of(" ");
+        size_t end = token.find_last_not_of(" ");
+        if (start != std::string::npos && end != std::string::npos) {
+            tokens.push_back(token.substr(start, end - start + 1));
+        } else if (!token.empty()) {
+            tokens.push_back(token);
+        }
+    }
+    
+    if (tokens.size() < 8) {
+        G4cerr << "Error: Insufficient parameters for addCylinder. Expected 8, got " 
+               << tokens.size() << G4endl;
+        return;
+    }
+    
+    try {
+        G4double innerRad = std::stod(tokens[1]);
+        G4double outerRad = std::stod(tokens[2]);
+        G4double height = std::stod(tokens[3]);
+        G4double x = std::stod(tokens[4]);
+        G4double y = std::stod(tokens[5]);
+        G4double z = std::stod(tokens[6]);
+        
+        G4cout << "AddCargoCylinder: " << tokens[0] << " " << innerRad << " " << outerRad << " " << height 
+               << " " << x << " " << y << " " << z << " " << tokens[7] << G4endl;
+        
+        AddCargoCylinder(tokens[0], 
+                        innerRad*cm, outerRad*cm, height*cm,
+                        x*cm, y*cm, z*cm,
+                        tokens[7]);
+    }
+    catch (const std::exception& e) {
+        G4cerr << "Error parsing parameters: " << e.what() << G4endl;
+    }
+}
+
+
 
 G4VPhysicalVolume *RPCConstruction::Construct() {
 
-    DefineMaterials();
-
     // Create world
     solidWorld = new G4Box("solidWorld", xWorldFull/2, yWorldFull/2, zWorldFull/2);
-    logicWorld = new G4LogicalVolume(solidWorld, worldMat, "logicWorld");
+    logicWorld = new G4LogicalVolume(solidWorld, GetMaterialByName(worldMaterial), "logicWorld");
+    G4UserLimits* worldLimit = new G4UserLimits();  
+    worldLimit->SetMaxAllowedStep(surroundingStepLimit*mm);
+    logicWorld->SetUserLimits(worldLimit);
     physWorld = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicWorld, "physWorld", 0, false, 0, true);  
 
-    // Create truck
-    xTruckFull = cargoLength*cm;
-    yTruckFull = cargoWidth*cm;
-    zTruckFull = cargoThickness*cm;     //thickness
-    solidTruck = new G4Box("solidTruck", xTruckFull/2, yTruckFull/2, zTruckFull/2);
-    logicTruck = new G4LogicalVolume(solidTruck, cargoMat, "logicTruck");
+    // Create cargo shapes
+    for (auto &pair : cargoBoxes) {
+        CargoBox &box = pair.second;
+        G4Box *solidBox = new G4Box(box.name + "_solid", box.length/2, box.width/2, box.height/2);
+        box.logicalVolume = new G4LogicalVolume(solidBox, box.material, box.name + "_logic");
+        
+        // Set step limits to ensure accurate simulation
+        G4UserLimits* boxLimits = new G4UserLimits();  
+        boxLimits->SetMaxAllowedStep(cargoStepLimit*mm);
+        box.logicalVolume->SetUserLimits(boxLimits);
+        
+        new G4PVPlacement(0, box.position, box.logicalVolume, box.name + "_phys", logicWorld, false, 0, true);
+    }
     
-    // Set step limits to ensure accurate simulation
-    G4UserLimits* userLimits = new G4UserLimits();  
-    userLimits->SetMaxAllowedStep(stepLimit*mm);
-    logicTruck->SetUserLimits(userLimits);
+    for (auto &pair : cargoEllipsoids) {
+        CargoEllipsoid &ellipsoid = pair.second;
+        G4Ellipsoid *solidEllipsoid = new G4Ellipsoid(ellipsoid.name + "_solid", ellipsoid.xSemiAxis, ellipsoid.ySemiAxis, ellipsoid.zSemiAxis);
+        ellipsoid.logicalVolume = new G4LogicalVolume(solidEllipsoid, ellipsoid.material, ellipsoid.name + "_logic");
+        G4UserLimits* ellipsoidLimits = new G4UserLimits();
+        ellipsoidLimits->SetMaxAllowedStep(cargoStepLimit*mm);
+        ellipsoid.logicalVolume->SetUserLimits(ellipsoidLimits);
+        new G4PVPlacement(0, ellipsoid.position, ellipsoid.logicalVolume, ellipsoid.name + "_phys", logicWorld, false, 0, true);
+    }
     
-    physTruck = new G4PVPlacement(0, G4ThreeVector(0., 0., 0.), logicTruck, "logicTruck", logicWorld, false, 0, true);
-
-    // Create boxes
-//    xBox1Full = cargoLength*cm;
-//    zBox1Full = cargoWidth*cm;
-//    yBox1Full = cargoThickness*cm;
-//    solidBox1 = new G4Box("solidBox1", xBox1Full/2, yBox1Full/2, zBox1Full/2);
-//    logicBox1 = new G4LogicalVolume(solidBox1, cargoMat, "logicBox1");
-//    
-//    xBox2Full = cargoLength*cm;
-//    zBox2Full = cargoWidth*cm;
-//    yBox2Full = cargoThickness*cm;
-//    solidBox2 = new G4Box("solidBox2", xBox2Full/2, yBox2Full/2, zBox2Full/2);
-//    logicBox2 = new G4LogicalVolume(solidBox2, cargoMat, "logicBox2");
-//    
-//    xBox3Full = cargoLength*cm;
-//    zBox3Full = cargoWidth*cm;
-//    yBox3Full = cargoThickness*cm;
-//    solidBox3 = new G4Box("solidBox3", xBox3Full/2, yBox3Full/2, zBox3Full/2);
-//    logicBox3 = new G4LogicalVolume(solidBox3, cargoMat, "logicBox3");
-    
-
+    for (auto &pair : cargoCylinders) {
+        CargoCylinder &cylinder = pair.second;
+        G4Tubs *solidCylinder = new G4Tubs(cylinder.name + "_solid", cylinder.innerRadius, cylinder.outerRadius, cylinder.height / 2, 0, 360*deg);
+        cylinder.logicalVolume = new G4LogicalVolume(solidCylinder, cylinder.material, cylinder.name + "_logic");
+        G4UserLimits* cylinderLimits = new G4UserLimits();
+        cylinderLimits->SetMaxAllowedStep(cargoStepLimit*mm);
+        cylinder.logicalVolume->SetUserLimits(cylinderLimits);
+        new G4PVPlacement(0, cylinder.position, cylinder.logicalVolume, cylinder.name + "_phys", logicWorld, false, 0, true);
+    }
 
     // Create RPC "pixels"
     xPixelFull = pixelLength*cm;
     yPixelFull = pixelWidth*cm;
     zPixelFull = pixelThickness*mm;
     solidPixel = new G4Box("solidPixel", xPixelFull/2, yPixelFull/2, zPixelFull/2);
-    logicPixel = new G4LogicalVolume(solidPixel, rpcMat, "logicPixel");
+    logicPixel = new G4LogicalVolume(solidPixel, GetMaterialByName(rpcMaterial), "logicPixel");
+    G4UserLimits* pixelLimit = new G4UserLimits();  
+    pixelLimit->SetMaxAllowedStep(surroundingStepLimit*mm);
+    logicPixel->SetUserLimits(pixelLimit);
     
     for (G4int i = 0; i < numY; i++) {
         for (G4int j = 0; j < numX; j++) {
             G4double xTrans = -(numX-1)/2.*xPixelFull + j * xPixelFull;
             G4double yTrans = -(numY-1)/2.*yPixelFull + i * yPixelFull;
-            for (G4int k = 0; k < height.size(); k++) {
-                G4double zTrans = (height[k] > 0 ? zTruckFull/2+height[k] : -zTruckFull/2+height[k]);
-                //G4double yTrans = (height[k] > 0 ? yBox1Full/2+height[k] : -yBox1Full/2+height[k]);
+            for (G4int k = 0; k < rpcHeights.size(); k++) {
+                G4double zTrans = rpcHeights[k];
                 G4Translate3D transRPC(G4ThreeVector(xTrans, yTrans, zTrans));
                 physPixel = new G4PVPlacement(transRPC, logicPixel, "physPixel", logicWorld, false, numY*numX*k+numX*i+j, false);
             }
@@ -167,23 +426,26 @@ G4VPhysicalVolume *RPCConstruction::Construct() {
 
 void RPCConstruction::ConstructSDandField() {
 
-    EventAction* eventAction = dynamic_cast<EventAction*>(G4EventManager::GetEventManager()->GetUserEventAction());
+    EventAction *eventAction = static_cast<EventAction*>(G4EventManager::GetEventManager()->GetUserEventAction());
 
-    SensitiveDetector *rpcdet = new SensitiveDetector("rpcdet", "rpcdet", eventAction);
+    SensitiveDetector *rpcdet = new SensitiveDetector("rpcdet", eventAction);
     logicPixel->SetSensitiveDetector(rpcdet);
+    
+    SensitiveDetector *worlddet = new SensitiveDetector("worlddet", eventAction);
+    logicWorld->SetSensitiveDetector(worlddet);
 
-    SensitiveDetector *truckdet = new SensitiveDetector("truckdet", "truckdet", eventAction);
-    logicTruck->SetSensitiveDetector(truckdet);   
-    
-    //SensitiveDetector *airdet = new SensitiveDetector("airdet", "airdet", eventAction);
-    //logicWorld->SetSensitiveDetector(airdet);   
-    
-//    SensitiveDetector *box1det = new SensitiveDetector("box1det", "box1det");  
-//    logicBox1->SetSensitiveDetector(box1det);   
-//    SensitiveDetector *box2det = new SensitiveDetector("box2det", "box2det");  
-//    logicBox2->SetSensitiveDetector(box2det);   
-//    SensitiveDetector *box3det = new SensitiveDetector("box3det", "box3det");  
-//    logicBox3->SetSensitiveDetector(box3det);   
+    for (auto& pair : cargoBoxes) {
+        SensitiveDetector *boxdet = new SensitiveDetector(pair.first, eventAction);
+        pair.second.logicalVolume->SetSensitiveDetector(boxdet);
+    }
+    for (auto& pair : cargoEllipsoids) {
+        SensitiveDetector *boxdet = new SensitiveDetector(pair.first, eventAction);
+        pair.second.logicalVolume->SetSensitiveDetector(boxdet);
+    }
+    for (auto& pair : cargoCylinders) {
+        SensitiveDetector *boxdet = new SensitiveDetector(pair.first, eventAction);
+        pair.second.logicalVolume->SetSensitiveDetector(boxdet);
+    }
 }
 
 

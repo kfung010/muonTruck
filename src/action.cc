@@ -1,23 +1,27 @@
 #include "action.hh"
 
 
-Action::Action() {}
-Action::~Action() {}
+Action::Action() {
+    fNtuple = new CreateNtuple();
+}
 
-void Action::BuildForMaster() const {
-    CreateNtuple *createNtuple = new CreateNtuple(); 
-    SetUserAction(createNtuple);
+Action::~Action() {
+    delete fNtuple;
 }
 
 void Action::Build() const {
+    CreateNtuple* workerNtuple = new CreateNtuple();
+    EventAction* workerEventAction = new EventAction();
+    muonGenerator* workerGenerator = new muonGenerator(workerEventAction);
 
-    EventAction *eventAction = new EventAction();
-    
-    muonGenerator *generator = new muonGenerator(eventAction);
-    SetUserAction(generator);
-    SetUserAction(eventAction);
-    
-    CreateNtuple *createNtuple = new CreateNtuple(); 
-    SetUserAction(createNtuple);
-    
+    //workerEventAction->SetRecordAllEvents(workerNtuple->GetRecordAllEvents());
+    //workerEventAction->SetRecordTruckHits(workerNtuple->GetRecordTruckHits());
+
+    SetUserAction(workerNtuple);            // RunAction
+    SetUserAction(workerEventAction);       // EventAction
+    SetUserAction(workerGenerator);         // PrimaryGeneratorAction
+}
+
+void Action::BuildForMaster() const {
+    SetUserAction(fNtuple);
 }

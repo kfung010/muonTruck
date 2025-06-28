@@ -11,13 +11,20 @@
 class SensitiveDetector: public G4VSensitiveDetector {
 
     public:
-        SensitiveDetector(G4String name, G4String detection, EventAction* eventAction);
+        SensitiveDetector(G4String name, EventAction* eventAction);
         ~SensitiveDetector();
+        
+        enum DetectionType {
+            RPC_DETECTION,
+            BOX_DETECTION,
+            WORLD_DETECTION
+        };
+        
     private:
-        G4String fDetection;
+        DetectionType fDetectionType;
         virtual G4bool ProcessHits(G4Step *, G4TouchableHistory *);
         void FillHitData(G4StepPoint* stepPoint, G4int eventNum);
-        void FillTruckData(G4StepPoint* stepPoint, G4int eventNum);
+        void FillScatteringData(G4StepPoint* stepPoint, G4int eventNum);
         EventAction *fEventAction;
 };
 

@@ -8,73 +8,96 @@ EventAction::~EventAction() {}
 void EventAction::BeginOfEventAction(const G4Event*) {
     G4int eventID = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     fRPCHitCache[eventID].clear();
-    fTruckHitCache[eventID].clear();
+    fScatteringCache[eventID].clear();
+    const CreateNtuple* ntuple = dynamic_cast<const CreateNtuple*>(G4RunManager::GetRunManager()->GetUserRunAction());
+    SetRecordAllEvents(ntuple->GetRecordAllEvents());
+    SetRecordGenerator(ntuple->GetRecordGenerator());
+    SetRecordHits(ntuple->GetRecordHits());
+    SetRecordScatterings(ntuple->GetRecordScatterings());
 } 
     
     
 void EventAction::EndOfEventAction(const G4Event *event) {
+
     G4int eventID = event->GetEventID();
+    if (eventID % 1000 == 0) {
+        G4cout << eventID << " events generated ..." << G4endl;
+    }
     
-    //G4cout << eventID << " fEventsWithTruckHits: " << fEventsWithTruckHits.count(eventID) << G4endl;
+    const CreateNtuple* ntuple = dynamic_cast<const CreateNtuple*>(G4RunManager::GetRunManager()->GetUserRunAction());
     
-    if (fEventsWithTruckHits.count(eventID)) {
+    G4int genId = ntuple->GetGeneratorNtupleId();
+    G4int hitsId = ntuple->GetHitsNtupleId();
+    G4int scatId = ntuple->GetScatteringsNtupleId();
+    
+    if (fEventsWithScatterings.count(eventID)) {
         G4AnalysisManager *manager = G4AnalysisManager::Instance();
-        for (const auto& gen : fGeneratorCache[eventID]) {
-            manager->FillNtupleIColumn(0, 0, gen.eventNum);
-            manager->FillNtupleDColumn(0, 1, gen.muonMomentum);
-            manager->FillNtupleDColumn(0, 2, gen.momMuon.x());
-            manager->FillNtupleDColumn(0, 3, gen.momMuon.y());
-            manager->FillNtupleDColumn(0, 4, gen.momMuon.z());
-            manager->AddNtupleRow(0);
+        if (ntuple->GetRecordGenerator() && genId >= 0) {
+            for (const auto& gen : fGeneratorCache[eventID]) {
+                manager->FillNtupleIColumn(genId, 0, gen.eventNum);
+                manager->FillNtupleDColumn(genId, 1, gen.muonEnergy);
+                manager->FillNtupleDColumn(genId, 2, gen.momMuon.x());
+                manager->FillNtupleDColumn(genId, 3, gen.momMuon.y());
+                manager->FillNtupleDColumn(genId, 4, gen.momMuon.z());
+                manager->AddNtupleRow(genId);
+            }
         }
-        for (const auto& hit : fRPCHitCache[eventID]) {
-            manager->FillNtupleIColumn(1, 0, hit.eventNum);
-            manager->FillNtupleDColumn(1, 1, hit.muonMomentum);
-            manager->FillNtupleDColumn(1, 2, hit.hitTime);
-            manager->FillNtupleDColumn(1, 3, hit.posMuon.x());
-            manager->FillNtupleDColumn(1, 4, hit.posMuon.y());
-      			manager->FillNtupleDColumn(1, 5, hit.posMuon.z());
-      			manager->FillNtupleDColumn(1, 6, hit.posDetector.x());
-      			manager->FillNtupleDColumn(1, 7, hit.posDetector.y());
-      			manager->FillNtupleDColumn(1, 8, hit.posDetector.z());
-      			manager->FillNtupleDColumn(1, 9, hit.momMuon.x());
-      			manager->FillNtupleDColumn(1, 10, hit.momMuon.y());
-      			manager->FillNtupleDColumn(1, 11, hit.momMuon.z());
-            manager->AddNtupleRow(1);
+        if (ntuple->GetRecordHits() && hitsId >= 0) {
+            for (const auto& hit : fRPCHitCache[eventID]) {
+                manager->FillNtupleIColumn(hitsId, 0, hit.eventNum);
+                manager->FillNtupleDColumn(hitsId, 1, hit.muonEnergy);
+                manager->FillNtupleDColumn(hitsId, 2, hit.hitTime);
+                manager->FillNtupleDColumn(hitsId, 3, hit.posMuon.x());
+                manager->FillNtupleDColumn(hitsId, 4, hit.posMuon.y());
+          			manager->FillNtupleDColumn(hitsId, 5, hit.posMuon.z());
+          			manager->FillNtupleDColumn(hitsId, 6, hit.posDetector.x());
+          			manager->FillNtupleDColumn(hitsId, 7, hit.posDetector.y());
+          			manager->FillNtupleDColumn(hitsId, 8, hit.posDetector.z());
+          			manager->FillNtupleDColumn(hitsId, 9, hit.momMuon.x());
+          			manager->FillNtupleDColumn(hitsId, 10, hit.momMuon.y());
+          			manager->FillNtupleDColumn(hitsId, 11, hit.momMuon.z());
+                manager->AddNtupleRow(hitsId);
+            }
         }
-        /*for (const auto& truck : fTruckHitCache[eventID]) {
-            manager->FillNtupleIColumn(2, 0, truck.eventNum);
-            manager->FillNtupleDColumn(2, 1, truck.muonMomentum);
-            manager->FillNtupleDColumn(2, 2, truck.scatTime);
-            manager->FillNtupleDColumn(2, 3, truck.posMuon.x());
-            manager->FillNtupleDColumn(2, 4, truck.posMuon.y());
-            manager->FillNtupleDColumn(2, 5, truck.posMuon.z());
-            manager->FillNtupleDColumn(2, 6, truck.momMuon.x());
-            manager->FillNtupleDColumn(2, 7, truck.momMuon.y());
-            manager->FillNtupleDColumn(2, 8, truck.momMuon.z());
-            manager->AddNtupleRow(2);
-        }*/
+        if (recordScatterings && ntuple->GetRecordScatterings() && scatId >= 0) {
+            for (const auto& scat : fScatteringCache[eventID]) {
+                manager->FillNtupleIColumn(scatId, 0, scat.eventNum);
+                manager->FillNtupleDColumn(scatId, 1, scat.muonEnergy);
+                manager->FillNtupleDColumn(scatId, 2, scat.scatTime);
+                manager->FillNtupleDColumn(scatId, 3, scat.posMuon.x());
+                manager->FillNtupleDColumn(scatId, 4, scat.posMuon.y());
+                manager->FillNtupleDColumn(scatId, 5, scat.posMuon.z());
+                manager->FillNtupleDColumn(scatId, 6, scat.momMuon.x());
+                manager->FillNtupleDColumn(scatId, 7, scat.momMuon.y());
+                manager->FillNtupleDColumn(scatId, 8, scat.momMuon.z());
+                manager->FillNtupleSColumn(scatId, 9, scat.scatMaterial);
+                manager->AddNtupleRow(scatId);
+            }
+        }
     }
     
     /*G4cout << "Event " << eventID 
        << ": RPC hits = " << fRPCHitCache[eventID].size()
-       << ", Truck hit = " << fEventsWithTruckHits.count(eventID)
+       << ", Scatterings = " << fEventsWithScatterings.count(eventID)
        << G4endl;*/
 
     fRPCHitCache.erase(eventID);
-    fEventsWithTruckHits.erase(eventID);
+    fGeneratorCache.erase(eventID);
+    fScatteringCache.erase(eventID);
+    fEventsWithScatterings.erase(eventID);
 }
 
-void EventAction::CacheGenerator(G4int eventNum, const GeneratorData &data) {
+
+void EventAction::CacheGenerator(G4int eventNum, const GeneratorData &data) { 
     fGeneratorCache[eventNum].push_back(data);
 }
 void EventAction::CacheRPCHit(G4int eventNum, const HitData &data) {
     fRPCHitCache[eventNum].push_back(data);
 }
-void EventAction::CacheTruckHit(G4int eventNum, const TruckData &data) {
-    fTruckHitCache[eventNum].push_back(data);
+void EventAction::CacheScattering(G4int eventNum, const ScatteringData &data) {
+    fScatteringCache[eventNum].push_back(data);
 }
 
-void EventAction::MarkTruckHit(G4int eventNum) {
-    fEventsWithTruckHits.insert(eventNum);
+void EventAction::MarkScattering(G4int eventNum) {
+    fEventsWithScatterings.insert(eventNum);
 }

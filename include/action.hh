@@ -13,6 +13,10 @@ class Action : public G4VUserActionInitialization {
 
         virtual void Build() const;
         virtual void BuildForMaster() const;
+    private:
+        CreateNtuple* fNtuple;  // RunAction
+        EventAction* fEventAction;  // EventAction
+        muonGenerator* fPrimaryGenerator;  // PrimaryGeneratorAction
 };
 
 #endif

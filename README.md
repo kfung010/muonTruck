@@ -56,7 +56,7 @@ make
 msbuild muTruck.sln /p:Configuration=Release /m:4
 ```
 
-Run the simulation in the `build` directory. See below for the options in the `config.mac` file.
+Run the simulation in the `build` directory. Please modify `vis.mac` and `config.mac` respectively for the visualization mode and the batch mode. See below for the configuration options.
 
 | Mode              | Linux Command                    | Windows Command                          |
 |-------------------|----------------------------------|-------------------------------------------|
@@ -71,19 +71,32 @@ Run the simulation in the `build` directory. See below for the options in the `c
 - `muonTruck_multithread.cc`: Multi-threaded execution for batch processing
 
 ## Core classes
-1. Construction of the appratus (`construction.hh/cc`)
+1. Construction of the appratus (`construction.hh/cc`): 
+
 Defines the geometry, positions and the material of the world, RPC plates and high-density mateiral
-2. Physics List (`physics.hh/cc`)
+
+2. Physics List (`physics.hh/cc`):
+
 Implements the necessary electromagnetic physics processes and includes step limiter for muons
-3. Sensitive Detector (`detector.hh/cc`)
+
+3. Sensitive Detector (`detector.hh/cc`):
+
 Detects muon hits in RPCs and the scattering in volumes
-4. Action Initialization (action.hh/cc)
+
+4. Action Initialization (action.hh/cc):
+
 It manages the three levels of actions: run action (`createNtuple`), event action (`eventAction`) and primary generator action (`generator`)
-5. Run action (`createNtuple.hh/cc`)
+
+5. Run action (`createNtuple.hh/cc`):
+
 A run is a collection of events. This class defines the structure of the output ROOT ntuples
-6. Event action (`eventAction.hh/cc`)
+
+6. Event action (`eventAction.hh/cc`):
+
 One event refers to one primary particle injection and all its secondary processes. This class controls the filling of the ntuple for each event.
-7. Muon Generator (`generator.hh/cc`)
+
+7. Muon Generator (`generator.hh/cc`):
+
 Define the generation of the muons, including the implementation the cosmic muon spectrum
 
 ## Configuration files

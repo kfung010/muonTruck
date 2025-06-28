@@ -3,9 +3,7 @@ GEANT4 code for muon tomography project
 
 # Introduction
 
-The repository is to perform GEANT4 simulation for the muon tomography project of the Chinese University of Hong Kong.
- 
-Several plates of resistive plate chambers (RPC) are placed above and below a cargo filled with high density material. When the cosmic muons pass the cargo, they are scattered or absorbed. By reconstructing the cosmic muon tracks from the RPC hits, we can deduce the material inside the cargo from the scattering angle. 
+The repository contains a GEANT4-based simulation for the cosmic muon tomography project of the Chinese University of Hong Kong. The simulation models cosmic muons passing through varius high-density materials and being detected by the resistive plate chambers (RPC) placed above and below the materials. When the cosmic muons pass the materials, they are scattered or absorbed. By analyzing muon scattering patterns, we hope to identify and  and reconstruct the 3D structures of the materials.
 
 
 # Installation of GEANT4
@@ -14,7 +12,7 @@ Several plates of resistive plate chambers (RPC) are placed above and below a ca
 
 * Pre-installation: 
 
-```sh
+```
 sudo apt install cmake cmake-curses-gui gcc g++ libexpat1-dev libxmu-dev libmotif-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
 ```
 
@@ -30,48 +28,100 @@ sudo apt install cmake cmake-curses-gui gcc g++ libexpat1-dev libxmu-dev libmoti
 
 Clone the repository by
 
-```sh
+```
 git clone https://github.com/kfung010/muonTruck.git
 ```
-## LINUX
-```sh
+
+Create and navigate to the `build` directory:
+
+ ```
 cd /path/to/muonTruck
 mkdir build
 cd build
-cmake ..  # Need to configure+build again if you change the source files or add new files
+```
+
+Configure project:
+
+```
+cmake ..
+```
+
+Build executable:
+
+```
+# LINUX
 make
-./muonTruck    # Or ./muonTruck_multithread runMultiMuon.mac to run in batch mode and multithread mode
-```
 
-## Windows
-```sh
-cd \path\to\muonTruck
-mkdir build
-cd build
-cmake ..  # Need to configure+build again if you change the source files or add new files
+# Windows
 msbuild muTruck.sln /p:Configuration=Release /m:4
-Release\muonTruck.exe  # Or Release\muonTruck_multithread.exe runMultiMuon.mac to run in batch mode
 ```
 
-The apparatus and the muon generation can be controlled by the following self-defined macro commands:
-- /apparatus/worldMaterial : air, vacuum
-- /apparatus/cargoMaterial : lithium, aluminium, copper, lead, ammoniumNitrate, carbon, tungsten, water
-- /apparatus/rpcMaterial : air, vacuum
-- /apparatus/cargoThickness (in cm)
-- /generation/distribution : monoEnergy_vertical, randomEnergy_vertical, randomEnergy_randomAngle, cosmic 
+Run the simulation in the `build` directory. See below for the options in the `config.mac` file.
+
+| Mode              | Linux Command                    | Windows Command                          |
+|-------------------|----------------------------------|-------------------------------------------|
+| Visualization     | `./muonTruck`                    | `Release\muonTruck.exe`                   |
+| Multi-threaded batch processing   | `./muonTruck_multithread ../config.mac` | `Release\muonTruck_multithread.exe ../config.mac` |
+
+
 
 # Documentation
-## Folders and files
-* `\include` contains the necessary header files, in which the declarations of variables, functions and classes are put
-* `\src` contains the source files, in which the definitions and actual implementations of the functions and classes are put
-* `muonTruck.cc` or  `muonTruck_multithread_.cc`  are the main files to execute
-* `vis.mac` contains the macro commands for the visualization settings in the interaction interface
-* `runMultiMuon.mac` contains the macro commands to run in batch mode (i.e. run multiple events and do not show the interaction interface). 
+## Main executables
+- `muonTruck.cc`: Single-threaded execution with visualization support
+- `muonTruck_multithread.cc`: Multi-threaded execution for batch processing
 
-## Modules
-* `construction` defines the geometry of the cargo and RPCs, their positions and the materials filling them
-* `generator` defines how a muon is generated (e.g. position, momentum, direction)
-* `detector` defines which components to detect the muons and extract the track information from those components
-* `createNtuple` creates a ROOT output file and store the necessary information during the simulation
-* `physics` defines the physics lists, i.e. what physical interactions (e.g. EM interactions, radioactive decays) should be considered in the simulation 
-* `action` defines the sequence of actions to be carried out in the simulation, e.g. muon generation, ntuple creation and etc.
+## Core classes
+1. Construction of the appratus (`construction.hh/cc`)
+Defines the geometry, positions and the material of the world, RPC plates and high-density mateiral
+2. Physics List (`physics.hh/cc`)
+Implements the necessary electromagnetic physics processes and includes step limiter for muons
+3. Sensitive Detector (`detector.hh/cc`)
+Detects muon hits in RPCs and the scattering in volumes
+4. Action Initialization (action.hh/cc)
+It manages the three levels of actions: run action (`createNtuple`), event action (`eventAction`) and primary generator action (`generator`)
+5. Run action (`createNtuple.hh/cc`)
+A run is a collection of events. This class defines the structure of the output ROOT ntuples
+6. Event action (`eventAction.hh/cc`)
+One event refers to one primary particle injection and all its secondary processes. This class controls the filling of the ntuple for each event.
+7. Muon Generator (`generator.hh/cc`)
+Define the generation of the muons, including the implementation the cosmic muon spectrum
+
+## Configuration files
+- `vis.mac`: visualization setup
+- `config.mac`: setup for batch processing in multi-thread mode
+### Key Configuration Parameters
+
+####  Construction Settings (`/apparatus/`)
+
+| Parameter              | Values                                  | Description                         |
+|----------------------|-----------------------------------------|-------------------------------------|
+| `worldMaterial`      | `air`, `vacuum`                         | World volume material               |
+| `rpcMaterial`        | `air`, `vacuum`, `RPCgas`               | RPC filling                     |
+| `pixelThickness`     | `[mm]`                                  | RPC pixel thickness                       |
+| `pixelLength`        | `[cm]`                                  | RPC pixel length                          |
+| `pixelWidth`        | `[cm]`                                  | RPC pixel width                          |
+| `pixelNum1`        |                                  | Number of RPC pixels in the x-direction                          |
+| `pixelNum2`        |                                  | Number of RPC pixels in the y-direction                          |
+| `addHeight`          | `[cm]`                                  | Z-positions of RPC plates             |
+| `addBox`             | `name,l,w,h,x,y,z,material`             | Add box-shaped high-density material (support lithium, aluminium, copper, lead, ammoniumNitrate, carbon, tungsten, water)               |
+| `addEllipsoid`       | `name,xSemi,ySemi,zSemi,x,y,z,material` | Add ellipsoid high-density material                 |
+| `addCylinder`        | `name,innerR,outerR,height,x,y,z,material` | Add cylindrical high-density material         |
+| `cargoStepLimit`        | `[mm]` | The maximum length that a particle can move in a single step to ensure accurate tracking          |
+
+#### Muon Generation (`/generation/`)
+
+| Parameter            | Values                                  | Description                         |
+|----------------------|-----------------------------------------|-------------------------------------|
+| `distribution`       | `cosmic`, `monoEnergy_vertical`, `randomEnergy_vertical`, `monoEnergy_tilt`, `randomEnergy_tilt` | Muon energy/angle distribution |
+| `muonEnergy`         | `[GeV]`                                 | Energy for mono-energy modes        |
+| `muonAngle`          | `[deg]`                                 | Zenith angle for tilted modes       |
+| `displacement`       | `[cm]`                                  | Horizontal offset from center in vertical/tilted modes      |
+
+#### Data Output (`/ntuple/`)
+
+| Parameter            | Default                                 | Description                         |
+|----------------------|-----------------------------------------|-------------------------------------|
+| `recordGenerator`    | `true`                                  | Save the parameters of the generated muons        |
+| `recordAllEvents`    | `true`                                  | Save all events (true) or only events hitting the high-density materials (false)                   |
+| `recordHits`         | `true`                                  | Save RPC hit information            |
+| `recordScatterings`  | `false`                                 | Save detailed scattering data (only for testing as it is slow and makes large files) |

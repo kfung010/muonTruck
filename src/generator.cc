@@ -34,14 +34,14 @@ void muonGenerator::GeneratePrimaries(G4Event *anEvent) {
 
     if (distribution == "monoEnergy_vertical" || distribution == "randomEnergy_vertical") {
         G4double zHighestRPC = rpcConstruction->getzHighestRPC();
-        xPos = 0;
-        yPos = 0;
+        xPos = G4UniformRand()*rpcConstruction->getxRPCFull() - rpcConstruction->getxRPCFull()/2;
+        yPos = G4UniformRand()*rpcConstruction->getyRPCFull() - rpcConstruction->getyRPCFull()/2;
         zPos = zHighestRPC + 10*m;
         xMom = 0;
         yMom = 0;
         zMom = -1;
         if (distribution == "monoEnergy_vertical") energyGenerate = muEne;
-        else energyGenerate = G4UniformRand()*49 + 1; 
+        else energyGenerate = G4UniformRand()*9 + 1; 
         thetaRdmGenerate = 0;
     }
     else if (distribution == "monoEnergy_tilt" || distribution == "randomEnergy_tilt") {
@@ -55,12 +55,12 @@ void muonGenerator::GeneratePrimaries(G4Event *anEvent) {
         yPos = -10*m * yMom;
         zPos = zHighestRPC - 10*m * zMom;
         if (distribution == "monoEnergy_tilt") energyGenerate = muEne;
-        else energyGenerate = G4UniformRand()*49 + 1; 
+        else energyGenerate = G4UniformRand()*9 + 1; 
         thetaRdmGenerate = 0;
     }
     else if (distribution == "monoEnergy_randomAngle" || distribution == "randomEnergy_randomAngle") {
         G4double xRdmGenerate = G4UniformRand()*rpcConstruction->getxRPCFull() - rpcConstruction->getxRPCFull()/2;
-        G4double yRdmGenerate = G4UniformRand()*rpcConstruction->getyRPCFull() - rpcConstruction->getyRPCFull()/2;
+        G4double yRdmGenerate = G4UniformRand()*rpcConstruction->getxRPCFull() - rpcConstruction->getxRPCFull()/2;
         G4double zHighestRPC = rpcConstruction->getzHighestRPC();
         G4double thetaRdmGenerate = G4UniformRand()*pi/2;
         G4double phiRdmGenerate = G4UniformRand()*2*pi;

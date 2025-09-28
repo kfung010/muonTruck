@@ -102,7 +102,7 @@ class RPCConstruction : public G4VUserDetectorConstruction {
         G4Material *worldMat, *rpcMat;
         
         G4Material *ammoniumNitrate, *H2O, *air, *vacuum, *C2H2F4, *iC4H10, *RPCgas;
-        G4Material *lithium, *aluminium, *copper, *lead, *tungsten, *carbon;
+        G4Material *lithium, *aluminium, *copper, *lead, *tungsten, *carbon, *iron, *uranium;
 
         virtual void ConstructSDandField();
         
@@ -123,6 +123,8 @@ class RPCConstruction : public G4VUserDetectorConstruction {
             if (materialName == "lithium") return lithium;
             if (materialName == "aluminium") return aluminium;
             if (materialName == "copper") return copper;
+            if (materialName == "uranium") return uranium;
+            if (materialName == "iron") return iron;
             if (materialName == "lead") return lead;
             if (materialName == "tungsten") return tungsten;
             if (materialName == "carbon") return carbon;

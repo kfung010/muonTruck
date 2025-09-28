@@ -73,6 +73,10 @@ void CreateNtuple::BeginOfRunAction(const G4Run *run) {
     strRunID << runID;
 
     G4String fileName = "output_"+strRunID.str()+".root";
+    if (!outputDir.empty()) {
+        if (outputDir.back() != '/') outputDir += '/';
+        fileName = outputDir + fileName;
+    }
     manager->OpenFile(fileName);
 }
 

@@ -3,7 +3,7 @@ GEANT4 code for muon tomography project
 
 # Introduction
 
-The repository contains a GEANT4-based simulation for the cosmic muon tomography project of the Chinese University of Hong Kong. The simulation models cosmic muons passing through varius high-density materials and being detected by the resistive plate chambers (RPC) placed above and below the materials. When the cosmic muons pass the materials, they are scattered or absorbed. By analyzing muon scattering patterns, we hope to identify and  and reconstruct the 3D structures of the materials.
+The repository contains a GEANT4-based simulation for the cosmic muon tomography project at the Chinese University of Hong Kong. The simulation models cosmic muons passing through various high-density materials and being detected by resistive plate chambers (RPCs) placed above and below these materials. As the cosmic muons traverse the materials, they undergo scattering or absorption. By analyzing the muon scattering patterns, we aim to identify and reconstruct the structures of the materials.
 
 
 # Installation of GEANT4
@@ -56,13 +56,21 @@ make
 msbuild muTruck.sln /p:Configuration=Release /m:4
 ```
 
-Run the simulation in the `build` directory. Please modify `vis.mac` and `config.mac` respectively for the visualization mode and the batch mode. See below for the configuration options.
+Go back to the `muonTruck/` directory and create a `run` directory. Run the simulation in this `run` directory. Two simulation modes are provided: visualization mode and batch-processing mode. In visualization mode, the simulation runs interactively, allowing you to visually observe the cosmic muon trajectories and scatterings. Batch-processing mode runs the simulation automatically without graphical output, enabling large-scale data generation and analysis more efficiently.
+
+For visualization mode, please modify `vis.mac` and run the `muonTruck` macro:
 
 | Mode              | Linux Command                    | Windows Command                          |
 |-------------------|----------------------------------|-------------------------------------------|
-| Visualization     | `./muonTruck`                    | `Release\muonTruck.exe`                   |
-| Multi-threaded batch processing   | `./muonTruck_multithread ../config.mac` | `Release\muonTruck_multithread.exe ../config.mac` |
+| Visualization     | `../build/muonTruck`                    | `..\build\Release\muonTruck.exe`                   |
 
+For batch-processing mode, please modify `config.mac` and COPY it to the `run/` directory and rename it to a meaningful name, such as `cosmic_leadBox.mac`. Run the `muonTruck_multithread` macro:
+
+| Mode              | Linux Command                    | Windows Command                          |
+|-------------------|----------------------------------|-------------------------------------------|
+| Multi-threaded batch processing   | `../build/muonTruck_multithread cosmic_leadBox.mac` | `..\build\Release\muonTruck_multithread.exe cosmic_leadBox.mac` |
+
+After the simulation completes, a directory named after the basename of the config file (`cosmic_leadBox/` in this example), will be created to store the output files. Use the `hadd` command to merge the output files into a single file and name it after the basename (`cosmic_leadBox.root` in this example).
 
 
 # Documentation
@@ -138,3 +146,20 @@ Define the generation of the muons, including the implementation the cosmic muon
 | `recordAllEvents`    | `true`                                  | Save all events (true) or only events hitting the high-density materials (false)                   |
 | `recordHits`         | `true`                                  | Save RPC hit information            |
 | `recordScatterings`  | `false`                                 | Save detailed scattering data (only for testing as it is slow and makes large files) |
+
+# Reconstruction
+
+Go to the directory containing the config file and the simulation output files, such as `run/cosmic_leadBox/` (you should have `cosmic_leadBox.mac` and `cosmic_leadBox.root` in this directory). Run
+
+```
+python ../../likelihood.py cosmic_leadBox     #python ../../likelihood.py <basename>
+```
+
+to perform the maximum-likelihood-expectation-maximization reconstruction, or run
+
+```
+python ../../poca.py cosmic_leadBox
+```
+
+to perform the simple POCA reconstruction.
+

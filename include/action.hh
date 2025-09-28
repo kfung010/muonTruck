@@ -8,7 +8,7 @@
 
 class Action : public G4VUserActionInitialization {
     public:
-        Action();
+        Action(const G4String& outputDir = "");
         ~Action();
 
         virtual void Build() const;
@@ -17,6 +17,7 @@ class Action : public G4VUserActionInitialization {
         CreateNtuple* fNtuple;  // RunAction
         EventAction* fEventAction;  // EventAction
         muonGenerator* fPrimaryGenerator;  // PrimaryGeneratorAction
+        G4String fOutputDir;
 };
 
 #endif

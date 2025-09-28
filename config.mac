@@ -1,7 +1,7 @@
 # ================ Configuration for the output ================ # 
 
 ###### Save the generator information ###### 
-/ntuple/recordGenerator true
+/ntuple/recordGenerator false
 
 ###### Record all events (true) or only events with scattering in cargo (false) ######
 /ntuple/recordAllEvents true
@@ -14,21 +14,21 @@
 
 
 # ================ Multi-thread mode ================ #
-/run/numberOfThreads 1
+/run/numberOfThreads 32
 /run/initialize
 
 # ================ Configuration for the apparatus ================ #
 
 ###### World material: air, vacuum ######
-/apparatus/worldMaterial vacuum
+/apparatus/worldMaterial air
 
 ###### RPC material: air, vacuum, RPCgas ######
-/apparatus/rpcMaterial vacuum
+/apparatus/rpcMaterial air
 
 ###### RPC pixel dimension (thickness in mm, length and width in cm) ######
 /apparatus/pixelThickness 1
 /apparatus/pixelLength 1000
-/apparatus/pixelWidth 1000
+/apparatus/pixelWidth 500
 
 ###### Number of RPC pixels in the x and y directions ######
 /apparatus/pixelNum1 1
@@ -40,10 +40,10 @@
 /apparatus/addHeight 270
 /apparatus/addHeight 250
 /apparatus/addHeight 230
-#/apparatus/addHeight -230
-#/apparatus/addHeight -250
-#/apparatus/addHeight -270
-#/apparatus/addHeight -290
+/apparatus/addHeight -230
+/apparatus/addHeight -250
+/apparatus/addHeight -270
+/apparatus/addHeight -290
 
 ###### Simulation step limit (in mm) ######
 /apparatus/cargoStepLimit 0.01
@@ -59,18 +59,18 @@
 
 #/apparatus/addBox CargoBox2,10,10,10,0,0,0,copper   # NOTE: Don't add spaces
 
-/apparatus/addBox CargoBox1,100,100,100,-150,0,0,water
-/apparatus/addBox CargoBox2,100,100,100,150,0,0,lead
+/apparatus/addBox CargoBox1,100,100,100,-50,0,0,water
+/apparatus/addBox CargoBox2,100,100,100,50,0,0,carbon
 
 #/apparatus/addBox CargoBox1,100,100,100,-150,0,0,water
-#/apparatus/addEllipsoid CargoEllipsoid1,50,50,50,-40,0,0,copper
-#/apparatus/addCylinder CargoCylinder1,0,50,100,90,90,0,lead
+#/apparatus/addEllipsoid CargoEllipsoid1,50,50,50,-20,0,0,copper
+#/apparatus/addCylinder CargoCylinder1,0,50,100,90,90,0,carbon
 
 
 # ================ Configuration for the particle generator ================ #
 
 ###### Distribution: cosmic, monoEnergy_vertical, randomEnergy_vertical, monoEnergy_tilt, randomEnergy_tilt ######
-/generation/distribution monoEnergy_vertical
+/generation/distribution cosmic
 
 ###### Muon energy, for mono-energy mode (in GeV) ######
 /generation/muonEnergy 5
@@ -87,5 +87,5 @@
 #/tracking/verbose 2 
 #/control/verbose 2
 #/run/verbose 2
-/run/beamOn 1
+/run/beamOn 1000000
 

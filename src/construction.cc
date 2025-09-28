@@ -43,63 +43,6 @@ RPCConstruction::RPCConstruction() {
 
 RPCConstruction::~RPCConstruction() {}
 
-//void RPCConstruction::SetupCargoLayout() {
-//    
-//    // Material: lithium, aluminium, copper, lead, ammoniumNitrate, carbon, tungsten, water, air
-//    
-//    // One thin plate
-//    /*AddCargoBox("Box", 
-//                100*cm, 100*cm, 1*cm,
-//                0, 0, 0, 
-//                "copper");*/
-//    
-//    // One box
-//    /*AddCargoBox("Box", 
-//                100*cm, 100*cm, 100*cm,
-//                0, 0, 0, 
-//                "copper");*/
-//            
-//    // Two separated boxes
-//    AddCargoBox("CargoBox1", 
-//                100*cm, 100*cm, 100*cm,
-//                -150*cm, 0, 0, 
-//                "water");
-//    
-//    AddCargoBox("CargoBox2", 
-//                100*cm, 100*cm, 100*cm,
-//                150*cm, 0, 0,
-//                "lead");
-//    
-//    /*
-//    // Two stacked boxes
-//    AddCargoBox("BottomBox", 
-//                100*cm, 50*cm, 100*cm,
-//                0, 0, 25*cm,
-//                "tungsten");
-//    
-//    AddCargoBox("TopBox", 
-//                80*cm, 50*cm, 80*cm,
-//                0, 0, 75*cm,
-//                "aluminium");
-//    */
-//    
-//    // Add one box, one ellipsoid, one sphere
-//    /*AddCargoBox("CargoBox1", 
-//                100*cm, 100*cm, 100*cm,
-//                -150*cm, 0, 0, 
-//                "water");
-//    
-//    AddCargoEllipsoid("CargoEllipsoid1", 
-//                       50*cm, 50*cm, 50*cm, 
-//                       -40*cm, 0, 0,
-//                        "copper");
-//                        
-//    AddCargoCylinder("CargoCylinder1", 
-//                     0, 50*cm, 100*cm, 
-//                     90*cm, 90*cm, 0, "lead");*/
-//}
-
-
 void RPCConstruction::DefineMaterials() {
 
     G4NistManager *nist = G4NistManager::Instance();
@@ -156,20 +99,14 @@ void RPCConstruction::DefineMaterials() {
     lithium = nist->FindOrBuildMaterial("G4_Li");
     aluminium = nist->FindOrBuildMaterial("G4_Al");
     copper = nist->FindOrBuildMaterial("G4_Cu");
+    iron = nist->FindOrBuildMaterial("G4_Fe");
+    uranium = nist->FindOrBuildMaterial("G4_U");
     tungsten = nist->FindOrBuildMaterial("G4_W");
     lead = nist->FindOrBuildMaterial("G4_Pb");
     carbon = nist->FindOrBuildMaterial("G4_C");
     air = nist->FindOrBuildMaterial("G4_AIR");
     vacuum = nist->FindOrBuildMaterial("G4_Galactic");
-    /*
-    if (worldMaterial == "air") worldMat = air;
-    else if (worldMaterial == "vacuum") worldMat = vacuum;
-    else throw std::runtime_error("Invalid world material. Program ended with an error.");
-    
-    if (rpcMaterial == "air") rpcMat = air;
-    else if (rpcMaterial == "vacuum") rpcMat = vacuum;
-    else if (rpcMaterial == "RPCgas") rpcMat = RPCgas;
-    else throw std::runtime_error("Invalid RPC material. Program ended with an error.");*/
+
 }
 
 void RPCConstruction::ClearRPCHeights() {

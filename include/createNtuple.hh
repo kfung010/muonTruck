@@ -28,6 +28,8 @@ class CreateNtuple : public G4UserRunAction {
         G4bool GetRecordGenerator() const { return recordGenerator; }
         G4bool GetRecordHits() const { return recordHits; }
         G4bool GetRecordScatterings() const { return recordScatterings; }
+        
+        void SetOutputDirectory(const G4String& dir) { outputDir = dir; }
 
 
     private:
@@ -39,6 +41,8 @@ class CreateNtuple : public G4UserRunAction {
         G4int generatorNtupleId_ = -1;
         G4int hitsNtupleId_ = -1;
         G4int scatteringsNtupleId_ = -1;
+        
+        G4String outputDir;
 };
 
 

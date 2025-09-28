@@ -1,8 +1,9 @@
 #include "action.hh"
 
 
-Action::Action() {
+Action::Action(const G4String& outputDir) : fOutputDir(outputDir) {
     fNtuple = new CreateNtuple();
+    fNtuple->SetOutputDirectory(fOutputDir);
 }
 
 Action::~Action() {
@@ -11,6 +12,8 @@ Action::~Action() {
 
 void Action::Build() const {
     CreateNtuple* workerNtuple = new CreateNtuple();
+    workerNtuple->SetOutputDirectory(fOutputDir);
+    
     EventAction* workerEventAction = new EventAction();
     muonGenerator* workerGenerator = new muonGenerator(workerEventAction);
 
@@ -23,5 +26,6 @@ void Action::Build() const {
 }
 
 void Action::BuildForMaster() const {
+    fNtuple->SetOutputDirectory(fOutputDir);
     SetUserAction(fNtuple);
 }

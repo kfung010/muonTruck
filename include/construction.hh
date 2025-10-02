@@ -6,6 +6,7 @@
 #include "G4Box.hh"
 #include "G4Ellipsoid.hh"
 #include "G4Tubs.hh"
+#include "G4Sphere.hh"
 #include "G4PVPlacement.hh"
 #include "G4NistManager.hh"
 #include "G4SystemOfUnits.hh"
@@ -13,15 +14,36 @@
 #include "eventAction.hh"
 #include "G4GenericMessenger.hh"
 #include "G4SDManager.hh"
+#include "G4SubtractionSolid.hh" 
 #include <G4UserLimits.hh>
 #include <vector>
 #include <map>
 
 struct CargoBox {
     G4String name;
-    G4double width;
     G4double length;
+    G4double width;
     G4double height;
+    G4ThreeVector position;
+    G4Material* material;
+    G4LogicalVolume* logicalVolume = nullptr;
+};
+
+struct CargoHollowBox {
+    G4String name;
+    G4double outerLength;
+    G4double outerWidth;
+    G4double outerHeight;
+    G4double wallThickness;
+    G4ThreeVector position;
+    G4Material* material;
+    G4LogicalVolume* logicalVolume = nullptr;
+};
+
+struct CargoHollowSphere {
+    G4String name;
+    G4double innerRadius;
+    G4double outerRadius;
     G4ThreeVector position;
     G4Material* material;
     G4LogicalVolume* logicalVolume = nullptr;
@@ -67,7 +89,9 @@ class RPCConstruction : public G4VUserDetectorConstruction {
         void AddRPCHeight(G4double height);
         
         void AddCargoBox(const G4String& params);
+        void AddCargoHollowBox(const G4String& params);
         void AddCargoEllipsoid(const G4String& params);
+        void AddCargoHollowSphere(const G4String& params);
         void AddCargoCylinder(const G4String& params);
 
         void SetupCargoLayout();
@@ -109,7 +133,9 @@ class RPCConstruction : public G4VUserDetectorConstruction {
         G4GenericMessenger *fMessenger;
         
         std::map<G4String, CargoBox> cargoBoxes;
+        std::map<G4String, CargoHollowBox> cargoHollowBoxes;
         std::map<G4String, CargoEllipsoid> cargoEllipsoids;
+        std::map<G4String, CargoHollowSphere> cargoHollowSpheres;
         std::map<G4String, CargoCylinder> cargoCylinders;
         
         G4Material* GetMaterialByName(const G4String& materialName) const {
@@ -131,12 +157,19 @@ class RPCConstruction : public G4VUserDetectorConstruction {
             throw std::runtime_error("Invalid material: " + materialName + ". Program ended with an error.");
         }
         
-        void AddCargoBox(const G4String& name, G4double width, G4double height, G4double length, 
+        void AddCargoBox(const G4String& name, G4double length, G4double width, G4double height, 
                          G4double posX, G4double posY, G4double posZ, const G4String& materialName);
         
+        void AddCargoHollowBox(const G4String& name, G4double outerLength, G4double outerWidth, G4double outerHeight,
+                              G4double wallThickness, G4double posX, G4double posY, G4double posZ, const G4String& materialName);
+
         void AddCargoEllipsoid(const G4String& name, 
                        G4double xSemiAxis, G4double ySemiAxis, G4double zSemiAxis,
                        G4double posX, G4double posY, G4double posZ, const G4String& materialName);
+        
+        void AddCargoHollowSphere(const G4String& name, 
+                                 G4double innerRadius, G4double outerRadius,
+                                 G4double posX, G4double posY, G4double posZ, const G4String& materialName);
 
         void AddCargoCylinder(const G4String& name, 
                               G4double innerRadius, G4double outerRadius, G4double height,

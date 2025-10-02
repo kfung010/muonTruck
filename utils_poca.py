@@ -1010,12 +1010,15 @@ class DataHandler:
                 ),
             ))
         
+        low_bound = min(self.x_min, self.y_min, self.z_min)
+        up_bound = min(self.x_max, self.y_max, self.z_max)
+
         fig.update_layout(
             title="",
             scene=dict(
-                xaxis=dict(title="x (cm)", range=[self.x_min, self.x_max]),
-                yaxis=dict(title="y (cm)", range=[self.y_min, self.y_max]),
-                zaxis=dict(title="z (cm)", range=[self.z_min, self.z_max]),
+                xaxis=dict(title="x (cm)", range=[low_bound, up_bound]),
+                yaxis=dict(title="y (cm)", range=[low_bound, up_bound]),
+                zaxis=dict(title="z (cm)", range=[low_bound, up_bound]),
                 aspectmode="cube"
             ),
             margin=dict(l=0, r=0, t=40, b=0),

@@ -49,11 +49,12 @@
 /apparatus/cargoStepLimit 0.01
 #/apparatus/surroundingStepLimit 0.01
 
-
 ###### Shapes, dimensions and positions of the cargo (in cm) ######
-###### Format for rectangular box: /apparatus/cargo/addBox <name>,<length>,<width>,<height>,<center x>,<center y>,<center z>,<mateirial> ######
-###### Format for ellipsoid: /apparatus/cargo/addEllipsoid <name>,<x semi-major axis>,<y semi-major axis>,<z semi-major axis>,<center x>,<center y>,<center z>,<mateirial> ######
-###### Format for cylinder: /apparatus/cargo/addCylinder <name>,<inner radius>,<outer radius>,<height>,<center x>,<center y>,<center z>,<mateirial> ######
+###### Format for rectangular box: /apparatus/addBox <name>,<length>,<width>,<height>,<center x>,<center y>,<center z>,<mateirial> ######
+###### Format for hallow box: /apparatus/addHollowBox <name>,<outer length>,<outer width>,<outer height>,<thickness>,<center x>,<center y>,<center z>,<mateirial> ######
+###### Format for ellipsoid: /apparatus/addEllipsoid <name>,<x semi-major axis>,<y semi-major axis>,<z semi-major axis>,<center x>,<center y>,<center z>,<mateirial> ######
+###### Format for hallow sphere /apparatus/addHollowSphere <name>,<inner radius>,<outer radius>,<center x>,<center y>,<center z>,<mateirial> ######
+###### Format for cylinder: /apparatus/addCylinder <name>,<inner radius>,<outer radius>,<height>,<center x>,<center y>,<center z>,<mateirial> ######
 
 /apparatus/clearCargo
 

@@ -31,10 +31,18 @@ RPCConstruction::RPCConstruction() {
                              &RPCConstruction::AddCargoBox, 
                              "Add box cargo: name l(cm) w(cm) h(cm) x(cm) y(cm) z(cm) material");
     
+    fMessenger->DeclareMethod("addHollowBox", 
+                             &RPCConstruction::AddCargoHollowBox, 
+                             "Add hollow box cargo: name outerL(cm) outerW(cm) outerH(cm) wallThickness(cm) x(cm) y(cm) z(cm) material");
+
     fMessenger->DeclareMethod("addEllipsoid", 
                              &RPCConstruction::AddCargoEllipsoid, 
                              "Add ellipsoid cargo: name xSemiAxis(cm) ySemiAxis(cm) zSemiAxis(cm) x(cm) y(cm) z(cm) material");
     
+    fMessenger->DeclareMethod("addHollowSphere", 
+                             &RPCConstruction::AddCargoHollowSphere, 
+                             "Add hollow sphere cargo: name innerRadius(cm) outerRadius(cm) x(cm) y(cm) z(cm) material");
+
     fMessenger->DeclareMethod("addCylinder", 
                              &RPCConstruction::AddCargoCylinder, 
                              "Add cylinder cargo: name innerRadius(cm) outerRadius(cm) height(cm) x(cm) y(cm) z(cm) material");
@@ -122,12 +130,27 @@ void RPCConstruction::AddCargoBox(const G4String& name, G4double length, G4doubl
                                  const G4String& materialName) {
     CargoBox box;
     box.name = name;
+    box.length = length;
     box.width = width;
     box.height = height;
-    box.length = length;
     box.position = G4ThreeVector(posX, posY, posZ);
     box.material = GetMaterialByName(materialName);
     cargoBoxes[name] = box;
+}
+
+void RPCConstruction::AddCargoHollowBox(const G4String& name, 
+                                       G4double outerLength, G4double outerWidth, G4double outerHeight,
+                                       G4double wallThickness, G4double posX, G4double posY, G4double posZ,
+                                       const G4String& materialName) {
+    CargoHollowBox hollowBox;
+    hollowBox.name = name;
+    hollowBox.outerLength = outerLength;
+    hollowBox.outerWidth = outerWidth;
+    hollowBox.outerHeight = outerHeight;
+    hollowBox.wallThickness = wallThickness;
+    hollowBox.position = G4ThreeVector(posX, posY, posZ);
+    hollowBox.material = GetMaterialByName(materialName);
+    cargoHollowBoxes[name] = hollowBox;
 }
 
 void RPCConstruction::AddCargoEllipsoid(const G4String& name, 
@@ -142,6 +165,19 @@ void RPCConstruction::AddCargoEllipsoid(const G4String& name,
     ellipsoid.position = G4ThreeVector(posX, posY, posZ);
     ellipsoid.material = GetMaterialByName(materialName);
     cargoEllipsoids[name] = ellipsoid;
+}
+
+void RPCConstruction::AddCargoHollowSphere(const G4String& name, 
+                                          G4double innerRadius, G4double outerRadius,
+                                          G4double posX, G4double posY, G4double posZ,
+                                          const G4String& materialName) {
+    CargoHollowSphere hollowSphere;
+    hollowSphere.name = name;
+    hollowSphere.innerRadius = innerRadius;
+    hollowSphere.outerRadius = outerRadius;
+    hollowSphere.position = G4ThreeVector(posX, posY, posZ);
+    hollowSphere.material = GetMaterialByName(materialName);
+    cargoHollowSpheres[name] = hollowSphere;
 }
 
 void RPCConstruction::AddCargoCylinder(const G4String& name, 
@@ -161,9 +197,10 @@ void RPCConstruction::AddCargoCylinder(const G4String& name,
 
 void RPCConstruction::ClearCargo() {
     cargoBoxes.clear();
+    cargoHollowBoxes.clear();
     cargoEllipsoids.clear();
+    cargoHollowSpheres.clear();
     cargoCylinders.clear();
-
 }
 
 void RPCConstruction::AddCargoBox(const G4String& params) {
@@ -199,6 +236,47 @@ void RPCConstruction::AddCargoBox(const G4String& params) {
                << " " << x << " " << y << " " << z << " " << tokens[7] << G4endl;
         
         AddCargoBox(tokens[0], l*cm, w*cm, h*cm, x*cm, y*cm, z*cm, tokens[7]);
+    }
+    catch (const std::exception& e) {
+        G4cerr << "Error parsing parameters: " << e.what() << G4endl;
+    }
+}
+
+void RPCConstruction::AddCargoHollowBox(const G4String& params) {
+    std::vector<G4String> tokens;
+    std::istringstream iss(params);
+    G4String token;
+    
+    while (std::getline(iss, token, ',')) {
+        size_t start = token.find_first_not_of(" ");
+        size_t end = token.find_last_not_of(" ");
+        if (start != std::string::npos && end != std::string::npos) {
+            tokens.push_back(token.substr(start, end - start + 1));
+        } else if (!token.empty()) {
+            tokens.push_back(token);
+        }
+    }
+
+    if (tokens.size() < 9) {
+        G4cerr << "Error: Insufficient parameters for addHollowBox. Expected 9, got " 
+               << tokens.size() << G4endl;
+        return;
+    }
+    
+    try {
+        G4double outerL = std::stod(tokens[1]);
+        G4double outerW = std::stod(tokens[2]);
+        G4double outerH = std::stod(tokens[3]);
+        G4double wallThick = std::stod(tokens[4]);
+        G4double x = std::stod(tokens[5]);
+        G4double y = std::stod(tokens[6]);
+        G4double z = std::stod(tokens[7]);
+        
+        G4cout << "AddCargoHollowBox: " << tokens[0] << " " << outerL << " " << outerW << " " << outerH 
+               << " " << wallThick << " " << x << " " << y << " " << z << " " << tokens[8] << G4endl;
+        
+        AddCargoHollowBox(tokens[0], outerL*cm, outerW*cm, outerH*cm, wallThick*cm, 
+                         x*cm, y*cm, z*cm, tokens[8]);
     }
     catch (const std::exception& e) {
         G4cerr << "Error parsing parameters: " << e.what() << G4endl;
@@ -241,6 +319,44 @@ void RPCConstruction::AddCargoEllipsoid(const G4String& params) {
                          xSemi*cm, ySemi*cm, zSemi*cm,
                          x*cm, y*cm, z*cm,
                          tokens[7]);
+    }
+    catch (const std::exception& e) {
+        G4cerr << "Error parsing parameters: " << e.what() << G4endl;
+    }
+}
+
+void RPCConstruction::AddCargoHollowSphere(const G4String& params) {
+    std::vector<G4String> tokens;
+    std::istringstream iss(params);
+    G4String token;
+    
+    while (std::getline(iss, token, ',')) {
+        size_t start = token.find_first_not_of(" ");
+        size_t end = token.find_last_not_of(" ");
+        if (start != std::string::npos && end != std::string::npos) {
+            tokens.push_back(token.substr(start, end - start + 1));
+        } else if (!token.empty()) {
+            tokens.push_back(token);
+        }
+    }
+
+    if (tokens.size() < 7) {
+        G4cerr << "Error: Insufficient parameters for addHollowSphere. Expected 7, got " 
+               << tokens.size() << G4endl;
+        return;
+    }
+    
+    try {
+        G4double innerRad = std::stod(tokens[1]);
+        G4double outerRad = std::stod(tokens[2]);
+        G4double x = std::stod(tokens[3]);
+        G4double y = std::stod(tokens[4]);
+        G4double z = std::stod(tokens[5]);
+        
+        G4cout << "AddCargoHollowSphere: " << tokens[0] << " " << innerRad << " " << outerRad 
+               << " " << x << " " << y << " " << z << " " << tokens[6] << G4endl;
+        
+        AddCargoHollowSphere(tokens[0], innerRad*cm, outerRad*cm, x*cm, y*cm, z*cm, tokens[6]);
     }
     catch (const std::exception& e) {
         G4cerr << "Error parsing parameters: " << e.what() << G4endl;
@@ -315,6 +431,31 @@ G4VPhysicalVolume *RPCConstruction::Construct() {
         
         new G4PVPlacement(0, box.position, box.logicalVolume, box.name + "_phys", logicWorld, false, 0, true);
     }
+
+    for (auto &pair : cargoHollowBoxes) {
+        CargoHollowBox &hollowBox = pair.second;
+        
+        G4Box *solidOuterBox = new G4Box(hollowBox.name + "_outer_solid", 
+                                        hollowBox.outerLength/2, hollowBox.outerWidth/2, hollowBox.outerHeight/2);
+        
+        G4double innerLength = hollowBox.outerLength - 2 * hollowBox.wallThickness;
+        G4double innerWidth = hollowBox.outerWidth - 2 * hollowBox.wallThickness;
+        G4double innerHeight = hollowBox.outerHeight - 2 * hollowBox.wallThickness;
+        
+        G4Box *solidInnerBox = new G4Box(hollowBox.name + "_inner_solid", 
+                                        innerLength/2, innerWidth/2, innerHeight/2);
+        
+        G4SubtractionSolid *solidHollowBox = new G4SubtractionSolid(
+            hollowBox.name + "_solid", solidOuterBox, solidInnerBox);
+        
+        hollowBox.logicalVolume = new G4LogicalVolume(solidHollowBox, hollowBox.material, hollowBox.name + "_logic");
+        
+        G4UserLimits* hollowBoxLimits = new G4UserLimits();
+        hollowBoxLimits->SetMaxAllowedStep(cargoStepLimit*mm);
+        hollowBox.logicalVolume->SetUserLimits(hollowBoxLimits);
+        
+        new G4PVPlacement(0, hollowBox.position, hollowBox.logicalVolume, hollowBox.name + "_phys", logicWorld, false, 0, true);
+    }
     
     for (auto &pair : cargoEllipsoids) {
         CargoEllipsoid &ellipsoid = pair.second;
@@ -324,6 +465,24 @@ G4VPhysicalVolume *RPCConstruction::Construct() {
         ellipsoidLimits->SetMaxAllowedStep(cargoStepLimit*mm);
         ellipsoid.logicalVolume->SetUserLimits(ellipsoidLimits);
         new G4PVPlacement(0, ellipsoid.position, ellipsoid.logicalVolume, ellipsoid.name + "_phys", logicWorld, false, 0, true);
+    }
+
+    for (auto &pair : cargoHollowSpheres) {
+        CargoHollowSphere &hollowSphere = pair.second;
+        
+        G4Sphere *solidSphere = new G4Sphere(hollowSphere.name + "_solid",
+                                           hollowSphere.innerRadius,  
+                                           hollowSphere.outerRadius, 
+                                           0, 360*deg,
+                                           0, 180*deg);
+        
+        hollowSphere.logicalVolume = new G4LogicalVolume(solidSphere, hollowSphere.material, hollowSphere.name + "_logic");
+        
+        G4UserLimits* sphereLimits = new G4UserLimits();
+        sphereLimits->SetMaxAllowedStep(cargoStepLimit*mm);
+        hollowSphere.logicalVolume->SetUserLimits(sphereLimits);
+        
+        new G4PVPlacement(0, hollowSphere.position, hollowSphere.logicalVolume, hollowSphere.name + "_phys", logicWorld, false, 0, true);
     }
     
     for (auto &pair : cargoCylinders) {
@@ -375,9 +534,17 @@ void RPCConstruction::ConstructSDandField() {
         SensitiveDetector *boxdet = new SensitiveDetector(pair.first, eventAction);
         pair.second.logicalVolume->SetSensitiveDetector(boxdet);
     }
+    for (auto& pair : cargoHollowBoxes) {
+        SensitiveDetector *hollowBoxdet = new SensitiveDetector(pair.first, eventAction);
+        pair.second.logicalVolume->SetSensitiveDetector(hollowBoxdet);
+    }
     for (auto& pair : cargoEllipsoids) {
         SensitiveDetector *boxdet = new SensitiveDetector(pair.first, eventAction);
         pair.second.logicalVolume->SetSensitiveDetector(boxdet);
+    }
+    for (auto& pair : cargoHollowSpheres) {
+        SensitiveDetector *spheredet = new SensitiveDetector(pair.first, eventAction);
+        pair.second.logicalVolume->SetSensitiveDetector(spheredet);
     }
     for (auto& pair : cargoCylinders) {
         SensitiveDetector *boxdet = new SensitiveDetector(pair.first, eventAction);

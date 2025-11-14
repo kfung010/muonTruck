@@ -88,5 +88,5 @@
 #/tracking/verbose 2 
 #/control/verbose 2
 #/run/verbose 2
-/run/beamOn 1000000
+/run/beamOn 10000
 

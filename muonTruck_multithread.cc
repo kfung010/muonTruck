@@ -66,7 +66,15 @@ int main(int argc, char** argv) {
 	if (std::rename(fileName.c_str(), newPath.c_str()) != 0) {
 		G4cerr << "Warning: failed to move the configuration file to output folder" << G4endl;
 	}
-
+	
+	// Combine outputs
+	std::string singleRootName = getOutputDirFromConfig(fileName.c_str()) + ".root";
+	std::string mergeCommand = "cd " + foldername + " && hadd " + singleRootName + " output_* && rm -f output_*";
+	int result = system(mergeCommand.c_str());
+    if (result != 0) {
+        G4cerr << "Warning: Failed to merge ROOT files." << G4endl;
+    }
+	
     return 0;
    
 }

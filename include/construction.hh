@@ -100,9 +100,9 @@ class RPCConstruction : public G4VUserDetectorConstruction {
 
     private:
 
-        G4double xWorldFull = 50*m; 
-        G4double yWorldFull = 50*m; 
-        G4double zWorldFull = 50*m; 
+        G4double xWorldFull = 1000*m; 
+        G4double yWorldFull = 1000*m; 
+        G4double zWorldFull = 1000*m; 
 
         G4double xPixelFull, yPixelFull, zPixelFull;
         std::vector<G4double> rpcHeights = {-290*cm, -270*cm, -250*cm, -230*cm, 230*cm, 250*cm, 270*cm, 290*cm};

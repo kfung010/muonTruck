@@ -114,7 +114,18 @@ void RPCConstruction::DefineMaterials() {
     carbon = nist->FindOrBuildMaterial("G4_C");
     air = nist->FindOrBuildMaterial("G4_AIR");
     vacuum = nist->FindOrBuildMaterial("G4_Galactic");
-
+    
+    G4cout << "Radiation length of water: " << H2O->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of lithium: " << lithium->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of aluminium: " << aluminium->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of copper: " << copper->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of iron: " << iron->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of uranium: " << uranium->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of tungsten: " << tungsten->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of lead: " << lead->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of carbon: " << carbon->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of air: " << air->GetRadlen()/10 <<  " cm" << G4endl;
+    G4cout << "Radiation length of vacuum: " << vacuum->GetRadlen()/10 <<  " cm" << G4endl;
 }
 
 void RPCConstruction::ClearRPCHeights() {

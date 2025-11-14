@@ -7,6 +7,9 @@ muonGenerator::muonGenerator(EventAction* eventAction) : fEventAction(eventActio
     fMessenger->DeclareProperty("muonEnergy", muEne, "Muon energy for monoEnergy_vertical");
     fMessenger->DeclareProperty("muonAngle", muAng, "Muon zenith angle for monoEnergy_tilt");
     fMessenger->DeclareProperty("displacement", muDisp, "Horizontal x displacement from the center");
+    fMessenger->DeclareProperty("roi_x", roi_x, "x-length of the region of interest");
+    fMessenger->DeclareProperty("roi_y", roi_y, "y-length of the region of interest");
+    fMessenger->DeclareProperty("roi_z", roi_z, "z-length of the region of interest");
 
     G4Random::setTheSeed(12);
     fParticleGun = new G4ParticleGun(1);  //number of particles per event (several events = 1 run)
@@ -29,8 +32,6 @@ void muonGenerator::GeneratePrimaries(G4Event *anEvent) {
     G4double xMom, yMom, zMom;
     G4double energyGenerate;
     G4double thetaRdmGenerate;
-    
-    
 
     if (distribution == "monoEnergy_vertical" || distribution == "randomEnergy_vertical") {
         G4double zHighestRPC = rpcConstruction->getzHighestRPC();
@@ -94,33 +95,42 @@ void muonGenerator::GeneratePrimaries(G4Event *anEvent) {
     }
     else throw std::runtime_error("Invalid muon generation mode. Program ended with an error.");
 
+	G4bool accept = false;
+	if((roi_x < 0) || (roi_y < 0) || (roi_z < 0)) 
+		accept = true;
+	else if (linePassesROI(roi_x, roi_y, roi_z, xPos, yPos, zPos, xMom, yMom, zMom)) {
+		accept = true;
+	}
 
-    // Initial position to generate muon
-    G4ThreeVector pos(xPos, yPos, zPos);   
-    fParticleGun->SetParticlePosition(pos);
+    if (accept) {
 
-    // Initial muon direction
-    G4ThreeVector mom(xMom, yMom, zMom); 
-    fParticleGun->SetParticleMomentumDirection(mom);
+        // Initial position to generate muon
+        G4ThreeVector pos(xPos, yPos, zPos);   
+        fParticleGun->SetParticlePosition(pos);
 
-    // Initial muon energy
-    //fParticleGun->SetParticleMomentum(momGenerate*GeV);  // This is momentum only. Total energy is p^2+m^2.
-    G4double kineticEnergy = energyGenerate * GeV - mass;
-    fParticleGun->SetParticleEnergy(kineticEnergy);
+        // Initial muon direction
+        G4ThreeVector mom(xMom, yMom, zMom); 
+        fParticleGun->SetParticleMomentumDirection(mom);
 
-    fParticleGun->GeneratePrimaryVertex(anEvent);
-    
-    G4int eventNum = anEvent->GetEventID();
-    FillGeneratorData(fParticleGun, eventNum);
+        // Initial muon energy
+        //fParticleGun->SetParticleMomentum(momGenerate*GeV);  // This is momentum only. Total energy is p^2+m^2.
+        G4double kineticEnergy = energyGenerate * GeV - mass;
+        fParticleGun->SetParticleEnergy(kineticEnergy);
 
-    //G4ParticleDefinition* particleDef = fParticleGun->GetParticleDefinition();
-    //G4ThreeVector position = fParticleGun->GetParticlePosition();
-    //G4double momentum = fParticleGun->GetParticleMomentum();
-    //G4ThreeVector momentumDirection = fParticleGun->GetParticleMomentumDirection();
-    //G4cout << "Particle: " << particleDef->GetParticleName() << G4endl;
-    //G4cout << "Momentum: " << momentum << G4endl;
-    //G4cout << "Position: (" << position.x() / cm << ", " << position.y() / cm << ", " << position.z() / cm << ") cm" << G4endl;
-    //G4cout << "Momentum Direction: (" << momentumDirection.x() << ", " << momentumDirection.y() << ", " << momentumDirection.z() << ")" << G4endl << G4endl;
+        fParticleGun->GeneratePrimaryVertex(anEvent);
+        
+        G4int eventNum = anEvent->GetEventID();
+        FillGeneratorData(fParticleGun, eventNum);
+
+        //G4ParticleDefinition* particleDef = fParticleGun->GetParticleDefinition();
+        //G4ThreeVector position = fParticleGun->GetParticlePosition();
+        //G4double momentum = fParticleGun->GetParticleMomentum();
+        //G4ThreeVector momentumDirection = fParticleGun->GetParticleMomentumDirection();
+        //G4cout << "Particle: " << particleDef->GetParticleName() << G4endl;
+        //G4cout << "Momentum: " << momentum << G4endl;
+        //G4cout << "Position: (" << position.x() / cm << ", " << position.y() / cm << ", " << position.z() / cm << ") cm" << G4endl;
+        //G4cout << "Momentum Direction: (" << momentumDirection.x() << ", " << momentumDirection.y() << ", " << momentumDirection.z() << ")" << G4endl << G4endl;
+    }
 }
 
 void muonGenerator::FillGeneratorData(G4ParticleGun *gun, G4int eventNum) {
@@ -166,4 +176,51 @@ std::tuple<G4double, G4double, G4double> muonGenerator::cosmicMuonZenithPhiAndEn
     }
 
     return std::make_tuple(theta, phi, ene);
+}
+
+G4bool muonGenerator::linePassesROI(G4double roi_x, G4double roi_y, G4double roi_z,
+                                    G4double xPos, G4double yPos, G4double zPos,
+                                    G4double xMom, G4double yMom, G4double zMom) {
+    
+    G4bool pass = false;
+                                        
+    G4double xMin = -roi_x*10/2;
+    G4double xMax = roi_x*10/2;
+    G4double yMin = -roi_y*10/2;
+    G4double yMax = roi_y*10/2;
+    G4double zMin = -roi_z*10/2;
+    G4double zMax = roi_z*10/2;     
+    
+    G4double x, y, z;
+    
+    // Top face
+    x = xPos + (zMax - zPos)/zMom * xMom;
+    y = yPos + (zMax - zPos)/zMom * yMom;
+
+
+    if ((x > xMin) && (x < xMax) && (y > yMin) && (y < yMax)) 
+        pass = true;
+    
+    // Side faces
+    x = xPos + (yMax - yPos)/yMom * xMom;
+    z = zPos + (yMax - yPos)/yMom * zMom;
+    if ((x > xMin) && (x < xMax) && (z > zMin) && (z < zMax)) 
+        pass = true;
+    
+    x = xPos + (yMin - yPos)/yMom * xMom;
+    z = zPos + (yMin - yPos)/yMom * zMom;
+    if ((x > xMin) && (x < xMax) && (z > zMin) && (z < zMax)) 
+        pass = true;
+    
+    y = yPos + (xMax - xPos)/xMom * yMom;
+    z = zPos + (xMax - xPos)/xMom * zMom;
+    if ((x > xMin) && (x < xMax) && (y > yMin) && (y < yMax)) 
+        pass = true;
+
+    y = yPos + (xMin - xPos)/xMom * yMom;
+    z = zPos + (xMin - xPos)/xMom * zMom;
+    if ((x > xMin) && (x < xMax) && (y > yMin) && (y < yMax)) 
+        pass = true;
+    
+    return pass;    
 }

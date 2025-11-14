@@ -32,10 +32,15 @@ class muonGenerator : public G4VUserPrimaryGeneratorAction {
         G4double muAng = pi/4;
         G4double muDisp = 0;
         G4double mass;
+        G4double roi_x=-1, roi_y=-1, roi_z=-1;
         
         EventAction *fEventAction;
 
         void FillGeneratorData(G4ParticleGun *gun, G4int eventNum);
+        
+        G4bool linePassesROI(G4double roi_x, G4double roi_y, G4double roi_z,
+                             G4double xPos, G4double yPos, G4double zPos,
+                             G4double xMom, G4double yMom, G4double zMom);
 };
 
 #endif

@@ -1,20 +1,20 @@
-/apparatus/worldMaterial air
-/apparatus/rpcMaterial air
+/apparatus/worldMaterial vacuum
+/apparatus/rpcMaterial vacuum
 /apparatus/pixelThickness 1
 /apparatus/pixelLength 1000
-/apparatus/pixelWidth 500
+/apparatus/pixelWidth 300
 /apparatus/pixelNum1 1
 /apparatus/pixelNum2 1
 
 /apparatus/clearHeights
-/apparatus/addHeight 290
-/apparatus/addHeight 270
-/apparatus/addHeight 250
-/apparatus/addHeight 230
-/apparatus/addHeight -230
-/apparatus/addHeight -250
-/apparatus/addHeight -270
-/apparatus/addHeight -290
+/apparatus/addHeight 190
+/apparatus/addHeight 180
+/apparatus/addHeight 170
+/apparatus/addHeight 160
+/apparatus/addHeight -160
+/apparatus/addHeight -170
+/apparatus/addHeight -180
+/apparatus/addHeight -190
 
 /apparatus/cargoStepLimit 0.01
 

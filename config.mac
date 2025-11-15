@@ -20,15 +20,15 @@
 # ================ Configuration for the apparatus ================ #
 
 ###### World material: air, vacuum ######
-/apparatus/worldMaterial air
+/apparatus/worldMaterial vacuum
 
 ###### RPC material: air, vacuum, RPCgas ######
-/apparatus/rpcMaterial air
+/apparatus/rpcMaterial vacuum
 
 ###### RPC pixel dimension (thickness in mm, length and width in cm) ######
 /apparatus/pixelThickness 1
 /apparatus/pixelLength 1000
-/apparatus/pixelWidth 500
+/apparatus/pixelWidth 300
 
 ###### Number of RPC pixels in the x and y directions ######
 /apparatus/pixelNum1 1
@@ -36,14 +36,14 @@
 
 ###### Height of the RPC plates (in cm) ######
 /apparatus/clearHeights
-/apparatus/addHeight 290
-/apparatus/addHeight 270
-/apparatus/addHeight 250
-/apparatus/addHeight 230
-/apparatus/addHeight -230
-/apparatus/addHeight -250
-/apparatus/addHeight -270
-/apparatus/addHeight -290
+/apparatus/addHeight 190
+/apparatus/addHeight 180
+/apparatus/addHeight 170
+/apparatus/addHeight 160
+/apparatus/addHeight -160
+/apparatus/addHeight -170
+/apparatus/addHeight -180
+/apparatus/addHeight -190
 
 ###### Simulation step limit (in mm) ######
 /apparatus/cargoStepLimit 0.01
@@ -61,7 +61,7 @@
 #/apparatus/addBox CargoBox2,10,10,10,0,0,0,copper   # NOTE: Don't add spaces
 
 /apparatus/addBox CargoBox1,100,100,100,-50,0,0,water
-/apparatus/addBox CargoBox2,100,100,100,50,0,0,carbon
+/apparatus/addBox CargoBox2,100,100,100,50,0,0,iron
 
 #/apparatus/addBox CargoBox1,100,100,100,-150,0,0,water
 #/apparatus/addEllipsoid CargoEllipsoid1,50,50,50,-20,0,0,copper
@@ -88,5 +88,5 @@
 #/tracking/verbose 2 
 #/control/verbose 2
 #/run/verbose 2
-/run/beamOn 10000
+/run/beamOn 200000
 

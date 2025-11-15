@@ -64,13 +64,13 @@ For visualization mode, please modify `vis.mac` and run the `muonTruck` macro:
 |-------------------|----------------------------------|-------------------------------------------|
 | Visualization     | `../build/muonTruck`                    | `..\build\Release\muonTruck.exe`                   |
 
-For batch-processing mode, please modify `config.mac` and COPY it to the `run/` directory and rename it to a meaningful name, such as `cosmic_leadBox.mac`. Run the `muonTruck_multithread` macro:
+For batch-processing mode, please modify `config.mac`, COPY it to the `run/` directory and rename it to a meaningful name, such as `cosmic_leadBox.mac`. Run the `muonTruck_multithread` macro:
 
 | Mode              | Linux Command                    | Windows Command                          |
 |-------------------|----------------------------------|-------------------------------------------|
 | Multi-threaded batch processing   | `../build/muonTruck_multithread cosmic_leadBox.mac` | `..\build\Release\muonTruck_multithread.exe cosmic_leadBox.mac` |
 
-After the simulation completes, a directory named after the basename of the config file (`cosmic_leadBox/` in this example), will be created to store the output files. Use the `hadd` command to merge the output files into a single file and name it after the basename (`cosmic_leadBox.root` in this example).
+After the simulation completes, a directory named after the basename of the config file (`cosmic_leadBox/` in this example), will be created. The configuration file and the output ROOT file will be automatically moved to this folder.
 
 
 # Documentation
@@ -124,8 +124,10 @@ Define the generation of the muons, including the implementation the cosmic muon
 | `pixelNum1`        |                                  | Number of RPC pixels in the x-direction                          |
 | `pixelNum2`        |                                  | Number of RPC pixels in the y-direction                          |
 | `addHeight`          | `[cm]`                                  | Z-positions of RPC plates             |
-| `addBox`             | `name,l,w,h,x,y,z,material`             | Add box-shaped high-density material (support lithium, aluminium, copper, lead, ammoniumNitrate, carbon, tungsten, water)               |
+| `addBox`             | `name,l,w,h,x,y,z,material`             | Add box-shaped high-density material (support lithium, aluminium, copper, lead, ammoniumNitrate, carbon, tungsten, water, uranium, iron)               |
+| `addHollowBox`             | `name,outerL,outerW,outerH,wallThickness,x,y,z,material`             | Add a hollow box |
 | `addEllipsoid`       | `name,xSemi,ySemi,zSemi,x,y,z,material` | Add ellipsoid high-density material                 |
+| `addHollowSphere`       | `name,innerR,outerRadius,x,y,z,material` | Add a spherical shell              |
 | `addCylinder`        | `name,innerR,outerR,height,x,y,z,material` | Add cylindrical high-density material         |
 | `cargoStepLimit`        | `[mm]` | The maximum length that a particle can move in a single step to ensure accurate tracking          |
 
@@ -149,17 +151,31 @@ Define the generation of the muons, including the implementation the cosmic muon
 
 # Reconstruction
 
-Go to the directory containing the config file and the simulation output files, such as `run/cosmic_leadBox/` (you should have `cosmic_leadBox.mac` and `cosmic_leadBox.root` in this directory). Run
+Go to the directory containing the config file and the simulation output files, such as `run/cosmic_leadBox/` (you should have `cosmic_leadBox.mac` and `cosmic_leadBox.root` in this directory). Run the POCA reconstruction by
 
 ```
-python ../../likelihood.py cosmic_leadBox     #python ../../likelihood.py <basename>
+python ../../recon/poca.py <basename> <argument1> <argument2> ...
 ```
 
-to perform the maximum-likelihood-expectation-maximization reconstruction, or run
+For example:
+```
+python ../../recon/poca.py cosmic_leadBox -r -p -pp -v 5
+```
+
+
+`-r` means to run the POCA point calculation and store the results.
+
+`-p` means to run the processing and store the scattering density profile.
+
+`-pp` means to run the post-processing -- to plot the density distributions.
+
+`-v 5` means setting the voxel size to be 5 cm. The default value will be 10 cm if not specified.
+
+
+To run the likelihood reconstruction, just run
 
 ```
-python ../../poca.py cosmic_leadBox
+python ../../recon/likelihood.py <basename> <argument1> <argument2> ...
 ```
 
-to perform the simple POCA reconstruction.
 

@@ -13,6 +13,7 @@ import multiprocessing
 from matplotlib import gridspec
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.optimize import curve_fit
+from scipy.stats import norm
 from tqdm import tqdm
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
@@ -139,8 +140,26 @@ def generate_unique_filename(filename):
         new_filename = f"{base}_{count}{ext}"
     return new_filename
 
-def plot_histograms(outputPDF, datasets, labels, colors, lowLim, upLim, binnum, x_label, y_label, log_scale=False, figsize=(10,6)):        
-        
+def plot_histograms(outputPDF, datasets, labels, colors, lowLim, upLim, binnum, x_label, y_label, log_scale=False, figsize=(10,6), do_gauss_fit=False, fitLowlim=None, fitUplim=None):        
+    ''' 
+    Plot only one dataset:
+    "datasets" is the list of data, e.g. [1.23, 4.56, ...]
+    "labels" is a string (empty string means no label)
+    "colors" is a string
+    
+    Plot multiple datasets:
+    "datasets" is the list of the list of data, e.g. [[1.23, 4.56, ...], [1.34, 2.45, ...]]
+    "labels" is the list of labels, e.g. ["x", "y"]
+    "colors" is the list of colors, e.g. ["red", "green"]
+    '''    
+    
+    if not isinstance(datasets[0], (list, np.ndarray, pd.Series)):
+        datasets = [datasets]
+    if isinstance(labels, str):
+        labels = [labels] if labels else [None]
+    if isinstance(colors, str):
+        colors = [colors]
+    
     bins = np.linspace(lowLim, upLim, binnum)
     
     outputPDF = generate_unique_filename(outputPDF)
@@ -149,8 +168,61 @@ def plot_histograms(outputPDF, datasets, labels, colors, lowLim, upLim, binnum, 
         plt.figure(figsize=figsize)
         for data, label, color in zip(datasets, labels, colors):
             hist, bin_edges = np.histogram(data, bins=bins)
-            plt.step(bin_edges[:-1], hist, where='post', label=label, color=color)
-        plt.xlim(0, upLim)
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+            if label:
+                plt.step(bin_edges[:-1], hist, where='post', label=label, color=color)
+            else:
+                plt.step(bin_edges[:-1], hist, where='post', color=color)
+            
+            if do_gauss_fit:
+                if fitLowlim is None:
+                    fitLowlim = lowLim
+                if fitUplim is None:
+                    fitUplim = upLim
+                try:
+                    mask = (bin_centers >= fitLowlim) & (bin_centers <= fitUplim)
+                    bin_centers_fit = bin_centers[mask]
+                    hist_fit = hist[mask]
+                    
+                    
+                    
+                    
+                    popt, _ = curve_fit(lambda x, mu, sigma, A: A * norm.pdf(x, mu, sigma),
+                                    bin_centers_fit, hist_fit, p0=[np.mean(data), np.std(data), max(hist)])
+                    mu, sigma, A = popt
+                    x_fit_full = np.linspace(lowLim, upLim, 500)
+                    y_fit_full = A * norm.pdf(x_fit_full, mu, sigma)
+                    
+                    mask_before = x_fit_full < fitLowlim
+                    if np.any(mask_before):
+                        plt.plot(x_fit_full[mask_before], y_fit_full[mask_before],
+                                color=color, linestyle='--', linewidth=1.5)
+                    
+                    mask_in = (x_fit_full >= fitLowlim) & (x_fit_full <= fitUplim)
+                    if np.any(mask_in):
+                        fit_label = f'{label} Gaussian fit' if label else 'Gaussian fit'
+                        plt.plot(x_fit_full[mask_in], y_fit_full[mask_in], 
+                                color=color, linestyle='-', linewidth=1.5, label=fit_label)
+                    
+                    mask_after = x_fit_full > fitUplim
+                    if np.any(mask_after):
+                        plt.plot(x_fit_full[mask_after], y_fit_full[mask_after], 
+                                color=color, linestyle='--', linewidth=1.5)
+
+                    textstr = '\n'.join((
+                        f'$\mu={mu:.5f}$',
+                        f'$\sigma={sigma:.5f}$',
+                    ))
+                    xpos = mu
+                    ypos = A * norm.pdf(mu, mu, sigma)
+                    plt.text(xpos, ypos, textstr, fontsize=10,
+                            color=color, verticalalignment='bottom', horizontalalignment='center',
+                            bbox=dict(boxstyle='round,pad=0.3', edgecolor=color, facecolor='white', alpha=0.8))
+                    
+                except Exception as e:
+                    print(f"Gaussian fit failed for dataset '{label}': {e}")
+            
+        plt.xlim(lowLim, upLim)
         plt.xlabel(x_label, fontsize=12)
         if log_scale:
             plt.yscale("log")
@@ -158,7 +230,7 @@ def plot_histograms(outputPDF, datasets, labels, colors, lowLim, upLim, binnum, 
         plt.legend()
         plt.grid(True, which='both', linestyle='--', alpha=0.5)
         pdf.savefig()
-        plt.close()        
+        plt.close()         
         
 def plot_line_chart(outputPDF, x_values, y_values_list, labels, colors, x_label, y_label, linestyle='-', marker='o', figsize=(10, 6)):
     
@@ -220,6 +292,9 @@ class DataHandler:
         self.heights = []
         self.min_RPC_separation = None
         self.cargo_shapes = []
+        self.x_min, self.x_max = None, None
+        self.y_min, self.y_max = None, None
+        self.z_min, self.z_max = None, None
         self.parse_config()
 
         # Voxelization configuration
@@ -231,6 +306,7 @@ class DataHandler:
         self.ny = None
         self.nz = None
         self.total_voxels = None
+        self.voxel_size_str = str(voxel_size) + "cmVoxelSize"
         self.initialize_voxelization()
 
         # Simulation data
@@ -238,18 +314,12 @@ class DataHandler:
 
         # Per-event variables
         self.p_r2 = []
-        self.D_x = []
-        self.D_y = []
-        self.passed_voxels = []
-        self.W = []
 
         # Per-voxel variables
         self.S_total = np.zeros(self.total_voxels)
         self.times_being_hit = np.zeros(self.total_voxels)
-        self.lambdaa = np.full(self.total_voxels, 0.000000001)
+        self.lambdaa = np.full(self.total_voxels, 0.001)
         
-        self.valid_voxels = []
-
         # =====
 
     def parse_config(self):
@@ -298,7 +368,6 @@ class DataHandler:
             heights = self.heights
             heights.append(float(line.split()[1]))
             self.heights = sorted(heights)
-
         elif line.startswith('/apparatus/addBox'):
             params = re.split(r'[,\s]+', line)[1:]
             box = Box(
@@ -342,9 +411,10 @@ class DataHandler:
         total_length = self.pixelLength * self.pixelNum1
         total_width = self.pixelWidth * self.pixelNum2
         
-        self.x_min, self.x_max = -total_length / 2 , total_length / 2
-        self.y_min, self.y_max = -total_width / 2 , total_width / 2
-        self.z_min, self.z_max = extract_largest_negative_smallest_positive(self.heights)
+        if (self.x_min is None) or (self.y_min is None) or (self.z_min is None):
+            self.x_min, self.x_max = -total_length / 2 , total_length / 2
+            self.y_min, self.y_max = -total_width / 2 , total_width / 2
+            self.z_min, self.z_max = extract_largest_negative_smallest_positive(self.heights)
         
         self.nx = int((self.x_max - self.x_min) / self.voxel_size)
         self.ny = int((self.y_max - self.y_min) / self.voxel_size)
@@ -378,10 +448,10 @@ class DataHandler:
         self.D_x = data['D_x']
         self.D_y = data['D_y']
         self.passed_voxels = data['passed_voxels']
-        self.W = data['W']
+        self.POCA_voxel = data["POCA_voxel"]
         log.debug(f"Loaded {data_filename}.")
     
-    def reconstruction(self, test=False, batch_size=1000):
+    def reconstruction(self, test=False, batch_size=1000, suffix=""):
         
         log.info("Reconstruction starts.")
 
@@ -394,10 +464,11 @@ class DataHandler:
         batch_p_r2 = []
         batch_D_x = []
         batch_D_y = []
+        batch_S_x = []
         batch_passed_voxels = []
-        batch_W = []
+        batch_POCA_voxel = []
 
-        test_num = 100000
+        test_num = 1000
 
         for count, (h_event, h_group) in enumerate(self.hits_df_grouped):
             if test and count > test_num:
@@ -407,8 +478,6 @@ class DataHandler:
             filled = int(10 * (count + 1) // total_events)
             bar = '#' * filled + ' ' * (10 - filled)
             print(f"\rProcessing events: |{bar}| {percent:.1f}% ({count + 1} / {total_events}, {self.recon_N_events} reconstructed)", end='', flush=True)
-
-            #print(f"{count} / {total_events}")
 
 
             # ***********************************************************************************
@@ -464,9 +533,6 @@ class DataHandler:
                 poca[2] < self.z_min or poca[2] > self.z_max):
                 continue
 
-            # ***********************************************************************************
-            # Maximum likelihood + Expectation maximization algorithm
-            # ***********************************************************************************
             # Relative momentum squared
             momentum_vector = h_group[["hitMomentumX_truth", "hitMomentumY_truth", "hitMomentumZ_truth"]].iloc[0].values
             momentum = np.linalg.norm(momentum_vector)
@@ -489,50 +555,14 @@ class DataHandler:
             delta_y = (point_1[1]-point_p[1]) * math.cos(theta_y_0) * Lxy * math.cos(delta_theta_y+theta_y_0) / math.cos(delta_theta_y)
 
             # Data vector
-            D_x = np.array([[delta_theta_x], [delta_x]])
-            D_y = np.array([[delta_theta_y], [delta_y]])
+            D_x = delta_theta_x*1000
+            D_y = delta_theta_y*1000
 
-            # L_length and T_length in the voxels passed by the POCA-reconstructed-trajectory (entry-POCA-exit)
+            # Voxels passed by the POCA-reconstructed-trajectory (entry-POCA-exit)
             passed_voxels_before_POCA = self.get_voxels_along_line(point_0, poca)
-            voxel_min_before_POCA, voxel_max_before_POCA = self.passed_voxel_min_max(passed_voxels_before_POCA)
-            tmin_before_POCA, tmax_before_POCA = self.liang_barsky(point_0, poca, voxel_min_before_POCA, voxel_max_before_POCA)
-            voxel_point_0_before_POCA = point_0 + tmin_before_POCA[:, None] * (poca - point_0)
-            voxel_point_1_before_POCA = point_0 + tmax_before_POCA[:, None] * (poca - point_0)
-            l_length_before_POCA = np.linalg.norm(voxel_point_1_before_POCA - voxel_point_0_before_POCA, axis=1)
-            #t_length_before_POCA = np.linalg.norm(voxel_point_1_before_POCA - point_1, axis=1)            
-            
             passed_voxels_after_POCA = self.get_voxels_along_line(poca, point_1)
-            voxel_min_after_POCA, voxel_max_after_POCA = self.passed_voxel_min_max(passed_voxels_after_POCA)
-            tmin_after_POCA, tmax_after_POCA = self.liang_barsky(poca, point_1, voxel_min_after_POCA, voxel_max_after_POCA)
-            voxel_point_0_after_POCA = poca + tmin_after_POCA[:, None] * (point_1 - poca)
-            voxel_point_1_after_POCA = poca + tmax_after_POCA[:, None] * (point_1 - poca)
-            l_length_after_POCA = np.linalg.norm(voxel_point_1_after_POCA - voxel_point_0_after_POCA, axis=1)
-            #t_length_after_POCA = np.linalg.norm(voxel_point_1_after_POCA - point_1, axis=1)
-            
             passed_voxels = np.concatenate((passed_voxels_before_POCA[:-1], passed_voxels_after_POCA))
-            l_length = np.concatenate((l_length_before_POCA[:-1], [l_length_before_POCA[-1] + l_length_after_POCA[0]], l_length_after_POCA[1:]))
-            #t_length = np.concatenate((t_length_before_POCA[:-1], t_length_after_POCA))
-
-            if np.isnan(l_length).any():
-                continue
-            
-            t_length = np.cumsum(l_length[::-1])[::-1] - l_length
-
-            # W matrix for each voxel
-            valid_W = []
-            W = np.zeros((2, 2))
-            for idx, vid in enumerate(passed_voxels):
-                L = l_length[idx]
-                T = t_length[idx]
-                L_sq = L * L
-                L_cubed = L_sq * L
-                T_sq = T * T
-                L_T = L * T
-                W[0, 0] = L
-                W[0, 1] = L_sq/2 + L_T
-                W[1, 0] = L_sq/2 + L_T 
-                W[1, 1] = L_cubed/3 + L_sq*T + L*T_sq
-                valid_W.append(W.copy())
+            POCA_voxel = self.get_voxel_id(x=poca[0],y=poca[1],z=poca[2])
 
             self.recon_N_events += 1
 
@@ -540,20 +570,20 @@ class DataHandler:
             batch_D_x.append(D_x)
             batch_D_y.append(D_y)
             batch_passed_voxels.append(passed_voxels)
-            batch_W.append(valid_W)
+            batch_POCA_voxel.append(POCA_voxel)
 
             stop = (count + 1) % batch_size == 0 or (count + 1) == total_events
             if test:
-                stop = (count + 1) % batch_size == 0 or count == test_num or (count + 1) == total_events
+                stop = (count + 1) % batch_size == 0 or count == test_num
             if stop:
-                batch_filename = f"{self.basename}_likelihood_eventBasedVar_batch_{batch_count}.npz"
+                batch_filename = f"{self.basename}_{self.voxel_size_str}_POCA_eventBasedVar_batch_{batch_count}.npz"
                 np.savez(
                     batch_filename,
                     p_r2=np.array(batch_p_r2),
                     D_x=np.array(batch_D_x),
                     D_y=np.array(batch_D_y),
                     passed_voxels=np.array(batch_passed_voxels, dtype=object),
-                    W=np.array(batch_W, dtype=object),
+                    POCA_voxel=np.array(batch_POCA_voxel)
                 )
 
                 batch_count += 1
@@ -562,31 +592,22 @@ class DataHandler:
                 batch_D_x = []
                 batch_D_y = []
                 batch_passed_voxels = []
-                batch_W = []
+                batch_POCA_voxel = []
 
         print()
         log.info("Reconstruction ends.")
 
     def update_S(self):
         
-        for count, (p_r2, D_x, D_y, passed_voxels, W_valid) in enumerate(zip(self.p_r2, self.D_x, self.D_y, self.passed_voxels, self.W)):
-            W = np.array(W_valid, dtype=np.float64)
-            passed_voxels = passed_voxels.astype(int)
-            lambda_passed = self.lambdaa[passed_voxels]
-            Sigma_D_inverse = np.linalg.inv( p_r2 * np.tensordot(lambda_passed, W, axes=([0], [0])) )
-            M = np.einsum('ij,njk,kl->nil', Sigma_D_inverse, W, Sigma_D_inverse)
-            DxT_M_Dx = np.einsum('ij,njk,kl->n', D_x.T, M, D_x)
-            DyT_M_Dy = np.einsum('ij,njk,kl->n', D_y.T, M, D_y)
-            trace = np.trace(np.matmul(Sigma_D_inverse, W), axis1=1, axis2=2)
-            S = 2*lambda_passed + ((DxT_M_Dx+DyT_M_Dy)/2 - trace)*p_r2*(lambda_passed*lambda_passed)
-            self.S_total[passed_voxels] += S
+        for count, (p_r2, D_x, D_y, passed_voxels, POCA_voxel) in enumerate(zip(self.p_r2, self.D_x, self.D_y, self.passed_voxels, self.POCA_voxel)):
+            
             self.times_being_hit[passed_voxels] += 1
+            self.S_total[POCA_voxel] += (D_x*D_x + D_y*D_y) / 2 
 
     def update_lambda(self):
         valid = self.times_being_hit != 0
-        self.lambdaa[valid] = (1 / (2 * self.times_being_hit[valid])) * self.S_total[valid]
-        self.S_total = np.zeros(self.total_voxels)
-        self.times_being_hit = np.zeros(self.total_voxels)
+        self.lambdaa[valid] = (self.S_total[valid] / self.times_being_hit[valid]) / self.voxel_size / 5.1526
+
 
     # ===============================================================================
 
@@ -809,7 +830,7 @@ class DataHandler:
                     break
         
         return np.array(voxel_ids)
-    
+
     def generate_shapes_for_view(self, view):
         view_shapes = []
         for shape in self.cargo_shapes:
@@ -878,7 +899,8 @@ class DataHandler:
     
         return view_shapes
 
-    def plot_voxels(self, classified=True, lowLim=0.5, upLim=1000000, cmap='rainbow', alpha=0.7):
+
+    def plot_voxels(self, classified=True, lowLim=0.1, upLim=1000000, cmap='rainbow', alpha=0.7):
         
         valid = (self.lambdaa > lowLim) & (self.lambdaa < upLim)
         valid_voxels = np.where(valid)[0]
@@ -899,7 +921,7 @@ class DataHandler:
         
         views = ['xy', 'xz', 'yz']
         
-        outputPDF = generate_unique_filename(f"valid_voxels_projected_poca_{self.basename}.pdf")
+        outputPDF = generate_unique_filename(f"valid_voxels_projected_poca_{self.basename}_{self.voxel_size_str}.pdf")
         with PdfPages(outputPDF) as pdf:
             for view in views:
                 fig, ax = plt.subplots(figsize=(6, 6))
@@ -924,7 +946,7 @@ class DataHandler:
                 for vid, lambdaa in zip(valid_voxels, valid_voxels_lambda):
                     
                     if classified:
-                        if 0.5 < lambdaa < 5:
+                        if 0.1 < lambdaa < 5:
                             color = 'pink'
                         elif 5 < lambdaa < 30:
                             color = 'green'
@@ -995,7 +1017,7 @@ class DataHandler:
                 plt.close(fig)
 
 
-    def plot_voxels_3d(self, classified=True, lowLim=0, upLim=1000000, cmap='rainbow', alpha=0.7):
+    def plot_voxels_3d(self, classified=True, lowLim=0.1, upLim=1000000, cmap='rainbow', alpha=0.7):
         
         valid = (self.lambdaa > lowLim) & (self.lambdaa < upLim)
         valid_voxels = np.where(valid)[0]
@@ -1022,7 +1044,7 @@ class DataHandler:
             z_coords.append(z)
             
             if classified:
-                if 0.5 < lambdaa < 5:
+                if 0.1 < lambdaa < 5:
                     colors.append('pink')
                 elif 5 < lambdaa < 30:
                     colors.append('green')
@@ -1034,7 +1056,7 @@ class DataHandler:
                 colors.append(lambdaa)
         
         fig = go.Figure()
-
+        print()
         if classified:
             fig.add_trace(go.Scatter3d(
                 x=x_coords,
@@ -1062,16 +1084,95 @@ class DataHandler:
                 ),
             ))
         
+        low_bound = min(self.x_min, self.y_min, self.z_min)
+        up_bound = max(self.x_max, self.y_max, self.z_max)
+
         fig.update_layout(
             title="",
             scene=dict(
-                xaxis=dict(title="x (cm)", range=[self.x_min, self.x_max]),
-                yaxis=dict(title="y (cm)", range=[self.y_min, self.y_max]),
-                zaxis=dict(title="z (cm)", range=[self.z_min, self.z_max]),
+                xaxis=dict(title="x (cm)", range=[low_bound, up_bound]),
+                yaxis=dict(title="y (cm)", range=[low_bound, up_bound]),
+                zaxis=dict(title="z (cm)", range=[low_bound, up_bound]),
                 aspectmode="cube"
             ),
             margin=dict(l=0, r=0, t=40, b=0),
         )
         
-        outputHTML = generate_unique_filename(f"valid_voxels_likelihood_{self.basename}.html")
+        outputHTML = generate_unique_filename(f"valid_voxels_poca_{self.basename}_{self.voxel_size_str}.html")
         fig.write_html(outputHTML)
+
+    
+    def is_voxel_truth_signal(self, voxel_id):
+        x, y, z = self.get_voxel_coor(voxel_id=voxel_id)
+        isSignal = False
+        for shape in self.cargo_shapes:
+            if shape.contains_point(x, y, z):
+                isSignal = True
+                break
+        return isSignal
+
+    def evaluate(self):
+        thresholds = np.arange(0.1, 2.1, 0.1)
+        accuracies = []
+        precisions = []
+        recalls = []
+        f1_scores = []
+        false_rates = []
+
+        truth = np.zeros(self.total_voxels)
+        for voxel_id in range(self.total_voxels):
+            if self.is_voxel_truth_signal(voxel_id):
+                truth[voxel_id] = 1
+
+        for threshold in thresholds:
+            recon = np.where(self.lambdaa < threshold, 0, 1)
+
+            N1 = np.sum((truth == 1) & (recon == 1))
+            N2 = np.sum((truth == 0) & (recon == 1))
+            N3 = np.sum((truth == 1) & (recon == 0))
+            N4 = np.sum((truth == 0) & (recon == 0))
+
+            #     Accuracy : Fraction of correctly identified voxels
+            #     Precision : Fraction of predicted signal voxels that are actually signal
+            #     Recall : Fraction of actual signal voxels that are predicted signal
+            #     F1 Score : Harmonic mean of precision and recall
+            #     False rate : Fraction of actual background voxels wrongly predicted as signal
+            accuracy = (N1 + N4) / (N1 + N2 + N3 + N4) if (N1 + N2 + N3 + N4) > 0 else 0
+            precision = N1 / (N1 + N2) if (N1 + N2) > 0 else 0
+            recall = N1 / (N1 + N3) if (N1 + N3) > 0 else 0
+            f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+            false_rate = N2 / (N4 + N2) if (N4 + N2) > 0 else 0
+
+            accuracies.append(accuracy)
+            precisions.append(precision)
+            recalls.append(recall)
+            f1_scores.append(f1_score)
+            false_rates.append(false_rate)
+
+        outputPDF = generate_unique_filename(f"metric_poca_{self.basename}_{self.voxel_size_str}.pdf")
+        with PdfPages(outputPDF) as pdf:
+            metrics = {
+                'Accuracy': accuracies,
+                'Precision': precisions,
+                'Recall': recalls,
+                'F1 Score': f1_scores,
+                'False Rate': false_rates
+            }
+
+            for metric_name, values in metrics.items():
+                fig, ax = plt.subplots(figsize=(8, 6))
+                ax.plot(thresholds, values, marker='o')
+                ax.set_xlabel('Scattering density cut')
+                ax.set_ylabel(metric_name)
+                ax.set_xlim(0.1, 2.0)
+                if metric_name == "Accuracy":
+                    ax.set_ylim(0.9, 1)
+                elif metric_name == "False Rate":
+                    ax.set_ylim(0.0, 0.1)
+                else:
+                    ax.set_ylim(0., 1.)
+                
+                ax.grid(True)
+
+                pdf.savefig(fig)
+                plt.close(fig)
